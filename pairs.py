@@ -1,28 +1,30 @@
 import sqlite3
 import sys
 
-# Init DB
-if __name__ == "__main__":
-    connection = sqlite3.connect("pairs.db")
-    cursor = connection.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (
-        `id` int,
-        `tg_id` int,
-        `vk_id` int,
-        `name` text,
-        `group` text);""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (
-        `id` int,
-        `group` text,
-        `even_week` bool,
-        `day_of_week` int,
-        `ordinal` int,
-        `lesson` text,
-        `teacher` text,
-        `type` int,
-        `location` text);""")
-    connection.commit()
-    sys.exit()
+# # Init DB
+# if __name__ == "__main__":
+#     connection = sqlite3.connect("pairs.db")
+#     cursor = connection.cursor()
+#     cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (
+#         `id` int,
+#         `tg_id` int,
+#         `vk_id` int,
+#         `name` text,
+#         `group` text);""")
+#     cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (
+#         `id` int,
+#         `group` text,
+#         `even_week` bool,
+#         `day_of_week` int,
+#         `ordinal` int,
+#         `lesson` text,
+#         `teacher` text,
+#         `type` int,
+#         `location` text);""")
+#     connection.commit()
+#     del cursor
+#     del connection
+#     sys.exit()
 
 
 class PSDB():
@@ -44,13 +46,13 @@ class PSDB():
         :param fname: имя файла базы данных (по умолчанию "pairs.db")
         """
         self._connection = sqlite3.connect(fname)
-        cursor = self._connection.cursor()
-        cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (`id` int, `tg_id` int,
-                `vk_id` int, `name` text, `group` text)""")
-        cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (`id` int, `group` text,
-                `even_week` bool, `day_of_week` int, `lesson` text, `teacher` text, `type` int, `location` text)""")
-        connection.commit()
-        del cursor
+        # cursor = self._connection.cursor()
+        # cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (`id` int, `tg_id` int,
+        #         `vk_id` int, `name` text, `group` text)""")
+        # cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (`id` int, `group` text,
+        #         `even_week` bool, `day_of_week` int, `lesson` text, `teacher` text, `type` int, `location` text)""")
+        # self._connection.commit()
+        # del cursor
 
     def __del__(self):
         del self._connection
@@ -70,9 +72,9 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         pairs_list = []
-        for row in cursor.execute("""SELECT * FROM `pairs` WHERE 
-                `group` = '?' AND `even_week` = ? AND 
-                `day_of_week` = '?'""", (group, even_week, day_of_week)):
+        for row in cursor.execute(f"""SELECT * FROM `pairs` WHERE 
+                `group` = '{group}' AND `even_week` = '{even_week}' AND 
+                `day_of_week` = '{day_of_week}' ORDER BY `ordinal`"""):
             pairs_list.append(row)
         del cursor
         return pairs_list
@@ -138,3 +140,7 @@ class PSDB():
     #     :return:
     #     """
     #     pass
+
+if __name__ == "__main__":
+    psdb = PSDB("pairs.db")
+    tomorrow = psdb.r_get_pairs_by_group(day_of_week=2, even_week=False, group="ИС/б-21-3-о")
