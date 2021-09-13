@@ -53,7 +53,8 @@ class PSDB():
         del cursor
 
     def __del__(self):
-        pass
+        del self._connection
+        del self
 
     def r_get_pairs_by_group(self, day_of_week: int, even_week: bool, group: str):
         """
@@ -73,6 +74,7 @@ class PSDB():
                 `group` = '?' AND `even_week` = ? AND 
                 `day_of_week` = '?'""", (group, even_week, day_of_week)):
             pairs_list.append(row)
+        del cursor
         return pairs_list
 
     def r_get_pairs_by_tgid(self, day_of_week: int, even_week: bool, tg_id: int):
@@ -84,6 +86,7 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         group = list(cursor.execute("""SELECT `group` FROM `users` WHERE `tg_id` = (?) LIMIT 1""", (tg_id,)))[0][0]
+        del cursor
         return self.r_get_pairs_by_group(day_of_week, even_week, group)
 
     def r_get_pairs_by_vkid(self, day_of_week: int, even_week: bool, vk_id: int):
@@ -95,6 +98,7 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         group = list(cursor.execute("""SELECT `group` FROM `users` WHERE `vk_id` = (?) LIMIT 1""", (vk_id,)))[0][0]
+        del cursor
         return self.r_get_pairs_by_group(day_of_week, even_week, group)
 
     def w_register_user_by_tgid(self, tg_id: int, name: str, group: str):
@@ -106,6 +110,7 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         res = cursor.execute("""INSERT INTO `users` (`tg_id`, `name`, `group`) VALUES (?, '?', '?')""", (tg_id, name, group))
+        del cursor
         if res and self._connection.commit():
             return True
         return False
@@ -119,15 +124,17 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         res = cursor.execute("""INSERT INTO `users` (`vk_id`, `name`, `group`) VALUES (?, '?', '?')""", (vk_id, name, group))
+        del cursor
         if res and self._connection.commit():
             return True
         return False
 
-    def w_remove_pair_by_timecoord_and_location(self, even_week: bool, day_of_week: int, ordinal: int, location: str):
-        """
-        :param even_week:
-        :param day_of_week:
-        :param ordinal:
-        :param location:
-        :return:
-        """
+    # def w_remove_pair_by_timecoord_and_location(self, even_week: bool, day_of_week: int, ordinal: int, location: str):
+    #     """
+    #     :param even_week:
+    #     :param day_of_week:
+    #     :param ordinal:
+    #     :param location:
+    #     :return:
+    #     """
+    #     pass
