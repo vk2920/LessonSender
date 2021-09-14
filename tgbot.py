@@ -20,6 +20,7 @@ psdb = PSDB()
 
 @dp.message_handler()
 async def echo(message: types.Message):
+    even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     today = datetime.datetime.today().weekday()
     tomorrow = today+1 if today != 6 else 0
     msg = """Сейчас для меня нет разницы, что ты написал.\n""" + \
@@ -27,7 +28,7 @@ async def echo(message: types.Message):
           """Здесь есть только расписание для группы создателей (ИС/б-21-3-о)\n\n"""
     if today != 6: # Если сегодня не воскресенье
         msg += bold("Вот твоё расписание на сегодня:") + "\n"
-        pairs = psdb.r_get_pairs_by_group(day_of_week=today+1, even_week=False, group="ИС/б-21-3-о")
+        pairs = psdb.r_get_pairs_by_group(day_of_week=today+1, even_week=even_week, group="ИС/б-21-3-о")
         for pair in pairs:
             pair = list(pair)
             if pair[4] == 1:
