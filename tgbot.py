@@ -50,8 +50,8 @@ async def echo(message: types.Message):
             msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(str(pair[7]) + " в ауд. " + str(pair[8])) + "\n\n"
 
     if tomorrow != 6: # Если завтра не воскресенье
-        msg += bold("Вот твоё расписание на сегодня:") + "\n"
-        pairs = psdb.r_get_pairs_by_group(day_of_week=today + 1, even_week=even_week, group="ИС/б-21-3-о")
+        msg += bold("Вот твоё расписание на завтра:") + "\n"
+        pairs = psdb.r_get_pairs_by_group(day_of_week=tomorrow + 1, even_week=even_week, group="ИС/б-21-3-о")
         for pair in pairs:
             pair = list(pair)
             if pair[4] == 1:
