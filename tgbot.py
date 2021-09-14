@@ -50,7 +50,28 @@ async def echo(message: types.Message):
             msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(str(pair[7]) + " в ауд. " + str(pair[8])) + "\n\n"
 
     if tomorrow != 6: # Если завтра не воскресенье
-        pass
+        msg += bold("Вот твоё расписание на сегодня:") + "\n"
+        pairs = psdb.r_get_pairs_by_group(day_of_week=today + 1, even_week=even_week, group="ИС/б-21-3-о")
+        for pair in pairs:
+            pair = list(pair)
+            if pair[4] == 1:
+                pair[4] = "8:30 ~ 10:00\n1. "
+            elif pair[4] == 2:
+                pair[4] = "10:10 ~ 11:40\n2. "
+            elif pair[4] == 3:
+                pair[4] = "11:50 ~ 13:20\n3. "
+            elif pair[4] == 4:
+                pair[4] = "14:00 ~ 15:30\n4. "
+            elif pair[4] == 5:
+                pair[4] = "15:40 ~ 17:10\n5. "
+            elif pair[4] == 6:
+                pair[4] = "17:20 ~ 18:50\n6. "
+            elif pair[4] == 7:
+                pair[4] = "19:00 ~ 20:30\n7. "
+            # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
+            #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
+            msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
+                str(pair[7]) + " в ауд. " + str(pair[8])) + "\n\n"
 
     await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
 
