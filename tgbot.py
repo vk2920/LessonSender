@@ -20,6 +20,10 @@ psdb = PSDB()
 
 @dp.message_handler()
 async def echo(message: types.Message):
+    with open("log.txt", "a") as f:
+        f.write("[" + str(datetime.datetime.today().strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
+                str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
+                str(message.from_user.first_name) + ": " + str(message.text) + "\n")
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     today = datetime.datetime.today().weekday()
     tomorrow = today+1 if today != 6 else 0
