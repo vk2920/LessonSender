@@ -22,7 +22,7 @@ async def echo(message: types.Message):
     # Запись в логах лишней не будет
     print("[" + str(datetime.datetime.today().strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
           str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
-          str(message.from_user.first_name) + ": " + str(message.text) + "\n")
+          str(message.from_user.first_name) + ": " + str(message.text))
 
     # Определим чётность недели и номера нужных дней недели
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
