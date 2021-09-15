@@ -10,7 +10,7 @@ from pairs import PSDB
 database = None
 API_TOKEN = '1941221231:AAEVvHJUmnIOl6RzcX6lUj5oossETD6I4RU'
 
-ban_list = [1074303708,]
+ban_list = []
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
