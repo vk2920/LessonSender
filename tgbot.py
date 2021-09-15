@@ -49,6 +49,12 @@ async def echo(message: types.Message):
             pairs = psdb.r_get_pairs_by_group(day_of_week=today+1, even_week=even_week, group="ИС/б-21-3-о")
             for pair in pairs:
                 pair = list(pair)
+                if pair[6] == "":
+                    pair[6] = "Преподаватель не определён"
+
+                if pair[8] == "":
+                    pair[8] = "аудитория не определена"
+
                 if pair[4] == 1:
                     pair[4] = "8:30 ~ 10:00\n1. "
                 elif pair[4] == 2:
