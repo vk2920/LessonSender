@@ -22,7 +22,7 @@ psdb = PSDB()
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    print("Работает версия от 20210915-1918")
+    print("Работает версия от 20210915-1925")
     if message.from_user.id in ban_list: # Отсеяли забаненых
         print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
               str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
@@ -72,7 +72,8 @@ async def echo(message: types.Message):
                     pair[4] = "19:00 ~ 20:30\n7. "
                 # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
                 #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(str(pair[7]) + " в ауд. " + str(pair[8])) + "\n\n"
+                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
+                       code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
 
         # Добавим в сообщение расписание на завтра
         if tomorrow != 6: # Если завтра не воскресенье
@@ -82,9 +83,6 @@ async def echo(message: types.Message):
                 pair = list(pair)
                 if pair[6] == "":
                     pair[6] = "Преподаватель не определён"
-
-                if pair[8] == "":
-                    pair[8] = "аудитория не определена"
 
                 if pair[4] == 1:
                     pair[4] = "8:30 ~ 10:00\n1. "
@@ -103,7 +101,7 @@ async def echo(message: types.Message):
                 # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
                 #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
-                    str(pair[7]) + " в ауд. " + str(pair[8])) + "\n\n"
+                    str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
 
         # Ассинхронный ответ на сообщение пользователя
         await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
