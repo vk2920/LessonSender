@@ -143,4 +143,6 @@ class PSDB():
 
 if __name__ == "__main__":
     psdb = PSDB("pairs.db")
-    tomorrow = psdb.r_get_pairs_by_group(day_of_week=2, even_week=False, group="ИС/б-21-3-о")
+    tomorrow = psdb.r_get_pairs_by_group(day_of_week=4, even_week=False, group="ИС/б-21-3-о")
+    for pair in tomorrow:
+        print(pair)
