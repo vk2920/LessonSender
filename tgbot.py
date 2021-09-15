@@ -23,13 +23,13 @@ psdb = PSDB()
 @dp.message_handler()
 async def echo(message: types.Message):
     if message.from_user.id in ban_list: # Отсеяли забаненых
-        print("[" + str(datetime.datetime.now(pytz.timezone('US/Pacific')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
+        print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
               str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
               str(message.from_user.first_name) + ": " + str(message.text))
         await message.answer("Доступ временно закрыт (кто-то там разраба оскорблял?)")
     else:
         # Запись в логах лишней не будет
-        print("[" + str(datetime.datetime.today(pytz.timezone('US/Pacific')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
+        print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
               str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
               str(message.from_user.first_name) + ": " + str(message.text))
 
