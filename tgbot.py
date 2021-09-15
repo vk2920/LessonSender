@@ -22,6 +22,7 @@ psdb = PSDB()
 
 @dp.message_handler()
 async def echo(message: types.Message):
+    print("Работает версия от 20210915-1918")
     if message.from_user.id in ban_list: # Отсеяли забаненых
         print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
               str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
