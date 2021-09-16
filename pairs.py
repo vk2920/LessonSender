@@ -111,21 +111,7 @@ class PSDB():
         :return: True, если запись произведена успешно, иначе False
         """
         cursor = self._connection.cursor()
-        res = cursor.execute("""INSERT INTO `users` (`tg_id`, `name`, `group`) VALUES (?, '?', '?')""", (tg_id, name, group))
-        del cursor
-        if res and self._connection.commit():
-            return True
-        return False
-
-    def w_register_user_by_vkid(self, vk_id: int, name: str, group: str):
-        """
-        :param vk_id: id пользователя в ВК (int)
-        :param name: ФИО пользователя
-        :param group: группа пользователя в формате
-        :return: True, если запись произведена успешно, иначе False
-        """
-        cursor = self._connection.cursor()
-        res = cursor.execute("""INSERT INTO `users` (`vk_id`, `name`, `group`) VALUES (?, '?', '?')""", (vk_id, name, group))
+        res = cursor.execute(f"""INSERT INTO `users` (`tg_id`, `name`, `group`) VALUES ({tg_id}, '{name}', '{group}')""")
         del cursor
         if res and self._connection.commit():
             return True
