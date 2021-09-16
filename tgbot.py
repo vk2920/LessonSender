@@ -36,7 +36,7 @@ def get_pairs(message, group):
     msg ="Я составляю ответ на основе содержимого своей базы данных\n" + \
           "Так что расписание может быть неактуальным\n" \
           "В любом случае, ты можешь предупредить администратора о несостыковках\n" \
-          "Почта: " + link('vk2920@yandex.ru', 'mailto:vk2920@yandex.ru') + "\n" \
+          "Почта: vk2920@yandex.ru\n" \
           "ТГ: @vk2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
 
     # Добавим к ответу бота расписание на сегодня
@@ -173,7 +173,10 @@ async def echo(message: types.Message):
                 "Введи \"help\", чтобы узнать о моих возможностях"
 
         # Ассинхронный ответ на сообщение пользователя
-        await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
+        try:
+            await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
+        except:
+            await message.answer(msg, parse_mode=types.ParseMode.MARKDOWN)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
