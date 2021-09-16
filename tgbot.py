@@ -176,7 +176,9 @@ async def echo(message: types.Message):
         try:
             await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
         except:
-            await message.answer(msg, parse_mode=types.ParseMode.MARKDOWN)
+            msg = "На стороне сервера сработало исключение (Error 500)\n" \
+                  "В связи с этим сообщение может быть неполноценным\n\n" + msg
+            await message.answer(msg)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
