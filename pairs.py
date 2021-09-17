@@ -73,7 +73,7 @@ class PSDB():
         pairs_list = []
         for row in cursor.execute(f"""SELECT * FROM "public".pairs WHERE 
                 group_name = '{group}' AND even_week = '{even_week}' AND 
-                day_of_week = '{day_of_week}' ORDER BY ordinal"""):
+                day_of_week = '{day_of_week}' ORDER BY ordinal""").fetchall():
             pairs_list.append(row)
         del cursor
         return pairs_list
@@ -86,7 +86,7 @@ class PSDB():
         :return: список пар на запрошенный день
         """
         cursor = self._connection.cursor()
-        group = list(cursor.execute(f"""SELECT group_name FROM "public".users WHERE tg_id = {tg_id} LIMIT 1"""))[0][0]
+        group = list(cursor.execute(f"""SELECT group_name FROM "public".users WHERE tg_id = {tg_id} LIMIT 1""")).fetchone()[0]
         del cursor
         return self.r_get_pairs_by_group(day_of_week, even_week, group)
 
@@ -98,7 +98,7 @@ class PSDB():
         :return: True, если запись произведена успешно, иначе False
         """
         cursor = self._connection.cursor()
-        res = cursor.execute(f"""INSERT INTO "public".users (`tg_id`, `name`, `group`) VALUES ({tg_id}, '{name}', '{group}')""")
+        res = cursor.execute(f"""INSERT INTO "public".users (`tg_id`, `name`, `group`) VALUES ({tg_id}, '{name}', '{group}')""").fetchall()
         del cursor
         if res and self._connection.commit():
             return True
