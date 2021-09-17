@@ -69,13 +69,13 @@ class PSDB():
              -- о — очная форма обучения (з — заочная)
         :return: список пар на запрошенный день
         """
-        cursor = self._connection.cursor()
         pairs_list = []
-        for row in cursor.execute(f"""SELECT * FROM "public".pairs WHERE 
-                group_name = '{group}' AND even_week = '{even_week}' AND 
-                day_of_week = '{day_of_week}' ORDER BY ordinal""").fetchall():
-            pairs_list.append(row)
-        del cursor
+        with self._connection.cursor() as cur:
+            cur.execute(f"SELECT * FROM public.pairs WHERE " + \
+                        f"group_name = '{group}' AND even_week = '{even_week}' AND " + \
+                        f"day_of_week = '{day_of_week}' ORDER BY ordinal")
+            for row in cur.fetchall():
+                pairs_list.append(row)
         return pairs_list
 
     def r_get_pairs_by_tgid(self, day_of_week: int, even_week: bool, tg_id: int):
@@ -85,10 +85,40 @@ class PSDB():
         :param tg_id: id пользователя в ТГ (int)
         :return: список пар на запрошенный день
         """
-        cursor = self._connection.cursor()
-        group = list(cursor.execute(f"""SELECT group_name FROM "public".users WHERE tg_id = {tg_id} LIMIT 1""")).fetchone()[0]
-        del cursor
-        return self.r_get_pairs_by_group(day_of_week, even_week, group)
+        with self._connection.cursor() as cur:
+            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            try:
+                group = list(cur.fetchone())[0]
+                return self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
+            except:
+                return "Твоя группа не указана в БД"
+
+    def r_get_exceptions_by_tgid(self, date: str, tg_id: int):
+        """
+        :param date: дата, неожиданные пары на которую нужно получить
+        :param tg_id: id пользователя в ТГ (int)
+        :return:
+        """
+        with self._connection.cursor() as cur:
+            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            try:
+                group = list(cur.fetchone())[0]
+                return self.r_get_exceptions_by_group(date=date, group=group)
+            except:
+                return "Твоя группа не указана в БД"
+
+    def r_get_exceptions_by_group(self, date: str, group: str):
+        """
+        :param date: дата, неожиданные пары на которую нужно получить
+        :param group: группа, пары которой нужно получить
+        :return: список кортежей с данными о парах, которых нет в расписании
+        """
+        pairs_list = []
+        with self._connection.cursor() as cur:
+            cur.execute(f"SELECT * FROM public.exceptions WHERE date = {date} AND group = '{group}' ORDER BY ordinal")
+            for pair in cur.fetchall():
+                pairs_list.append(pair)
+        return pairs_list
 
     def w_register_user_by_tgid(self, tg_id: int, name: str, group: str):
         """
@@ -98,14 +128,16 @@ class PSDB():
         :return: True, если запись произведена успешно, иначе False
         """
         cursor = self._connection.cursor()
-        res = cursor.execute(f"""INSERT INTO "public".users (`tg_id`, `name`, `group`) VALUES ({tg_id}, '{name}', '{group}')""").fetchall()
-        del cursor
-        if res and self._connection.commit():
+        res = cursor.execute(f"INSERT INTO public.users (tg_id, name, group_name) VALUES ({tg_id}, '{name}', '{group}');")
+        # if res and self._connection.commit():
+        if res and cursor.execute("COMMIT;"):
             return True
         return False
 
+
 if __name__ == "__main__":
     psdb = PSDB()
-    pairs = psdb.r_get_pairs_by_group(day_of_week=1, even_week=True, group="ис/б-21-3-о")
-    for pair in pairs:
-        print(pair)
+    print(psdb.w_register_user_by_tgid(470985286, "Вадим", "ис/б-21-3-о"))
+    # pairs = psdb.r_get_pairs_by_group(day_of_week=1, even_week=True, group="ис/б-21-3-о")
+    # for pair in pairs:
+    #     print(pair)
