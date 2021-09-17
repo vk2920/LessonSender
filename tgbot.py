@@ -11,6 +11,7 @@ database = None
 API_TOKEN = '1941221231:AAEVvHJUmnIOl6RzcX6lUj5oossETD6I4RU'
 
 ban_list = []
+bot_version = "20210917-1300"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +21,7 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 psdb = PSDB()
 
-def get_pairs(message, group):
+def get_pairs(message):
     # Запись в логах лишней не будет
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
           str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
@@ -40,14 +41,14 @@ def get_pairs(message, group):
           "ТГ: @vk2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
 
     # Добавим к ответу бота расписание на сегодня
-    msg += get_today(message, group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+    msg += get_today(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
 
     # Добавим в сообщение расписание на завтра
-    msg += get_next_day(message, group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+    msg += get_next_day(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
 
     return msg
 
-def get_today(message, group):
+def get_today(group):
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     today = datetime.datetime.today().weekday()
     msg = ""
@@ -82,7 +83,7 @@ def get_today(message, group):
             msg += bold("Сегодня нет пар") + "\n"
     return msg
 
-def get_next_day(message, group):
+def get_next_day(group):
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     tomorrow = datetime.datetime.today().weekday() + 1
     msg = ""
@@ -124,7 +125,7 @@ def get_next_day(message, group):
             msg += bold("Завтра выходной, хоть и не воскресенье" if not monday else "В понедельник нет пар (выходной)")
     return msg
 
-def get_help(message):
+def get_help():
     return "Итак, в этом боте ты можешь узнать расписание на сегодня, " \
            "на завтра, на неделю, на 2 недели (полное расписание)\n" \
            "Тут есть следующие команды (их перечень будет расширяться):\n" \
@@ -138,7 +139,7 @@ def get_help(message):
 
 @dp.message_handler()
 async def echo(message: types.Message):
-    print("Работает версия от 20210916-2030")
+    print("Работает версия от " + bot_version)
     if message.from_user.id in ban_list: # Отсеяли забаненых
         print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
               str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + \
@@ -150,11 +151,11 @@ async def echo(message: types.Message):
             # Тут будет "интуитивное" определение требования пользователя
             # Либо это будут пары на сегодня
             # Либо это будут пары на завтра (следующий учебный день)
-            msg = get_pairs(message, group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+            msg = get_pairs(message)
         elif cmd[0] == "сегодня":
-            msg = get_today(message, group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+            msg = get_today(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
         elif cmd[0] == "завтра":
-            msg = get_next_day(message, group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+            msg = get_next_day(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
         elif cmd[0] == "группа":
             if len(cmd) != 1:
                 if psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, message.text.split(" ")[1]):
