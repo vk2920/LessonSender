@@ -91,7 +91,7 @@ class PSDB():
                 group = list(cur.fetchone())[0]
                 return self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
             except:
-                return "Твоя группа не указана в БД"
+                return []
 
     def r_get_exceptions_by_tgid(self, date: str, tg_id: int):
         """

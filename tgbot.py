@@ -23,7 +23,8 @@ psdb = PSDB()
 
 
 def is_group(group: str):
-    group = group.strip("/")
+    print("Проверка строки, действительно ли это группа")
+    group = group.split("/")
     if len(group) != 2:
         return False
 
@@ -36,6 +37,16 @@ def is_group(group: str):
     if code_list[0] not in "бм":
         return False
 
+    try:
+        int(code_list[1])
+    except:
+        return False
+
+    try:
+        int(code_list[2])
+    except:
+        return False
+
     if code_list[3] not in "оз":
         return False
 
@@ -43,11 +54,14 @@ def is_group(group: str):
 
 
 def get_pairs(message: types.Message):
+    print("Получение списка пар (команда 'пары')")
     # Определим чётность недели и номера нужных дней недели
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     today = datetime.datetime.today().weekday()
     tomorrow = today+1 if today != 6 else 0
     cmd = message.text.lower().replace(",", "").split(" ")
+    print("Сообщение в виде команды: " + str(cmd))
+    print("           Длина команды: " + str(len(cmd)))
 
     # Текст в начале сообщения
     msg ="Я составляю ответ на основе содержимого своей базы данных\n" + \
@@ -55,15 +69,21 @@ def get_pairs(message: types.Message):
           "В любом случае, ты можешь предупредить администратора о несостыковках\n" \
           "Почта: vk2920@yandex.ru\n" \
           "ТГ: @vk2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
+    print("Дбавлен заголовок сообщения")
 
     # Добавим к ответу бота расписание на сегодня
-    if len(cmd) == 2 and cmd[1] != "" and is_group(cmd[1]):
+    if len(cmd) == 2 and is_group(cmd[1]):
         msg += get_today(group=cmd[1])
     else:
         msg += get_today_by_id(message.from_user.id)
+    print("Добавлено расписане на сегодня")
 
     # Добавим в сообщение расписание на завтра
-    msg += get_next_day(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+    if len(cmd) == 2 and cmd[1] != "" and is_group(cmd[1]):
+        msg += get_next_day(group=cmd[1])
+    else:
+        msg += get_next_day_by_id(message.from_user.id)
+    print("Добавлено расписане на завтра")
 
     return msg
 
@@ -136,7 +156,7 @@ def get_today_by_id(id: int):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
                        code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("Сегодня нет пар") + "\n"
+            msg += bold("Сегодня нет пар") + "\n\n"
     return msg
 
 
@@ -183,7 +203,7 @@ def get_next_day(group: str):
     return msg
 
 
-def get_tomorrow_by_id(id: int):
+def get_next_day_by_id(id: int):
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     tomorrow = datetime.datetime.today().weekday() + 1
     msg = ""
