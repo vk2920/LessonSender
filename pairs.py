@@ -74,6 +74,8 @@ class PSDB():
             sql = f"SELECT * FROM public.pairs WHERE " + \
                   f"group_name = '{group}' AND even_week = {even_week} AND " + \
                   f"day_of_week = {day_of_week} ORDER BY ordinal"
+            print("Получение списка пар по группе:")
+            print(sql)
             cur.execute(sql)
             for row in cur.fetchall():
                 pairs_list.append(row)
@@ -87,13 +89,19 @@ class PSDB():
         :return: список пар на запрошенный день
         """
         with self._connection.cursor() as cur:
-            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            sql = f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1"""
+            print("Получение группы пользователя:")
+            print(sql)
+            cur.execute(sql)
             try:
                 group = list(cur.fetchone())[0]
                 pairs = self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
                 return pairs
             except:
-                return []
+                try:
+                    return []
+                finally:
+                    pass
 
     def r_get_exceptions_by_tgid(self, date: str, tg_id: int):
         """
