@@ -209,7 +209,13 @@ def get_next_day(group: str):
 
 def get_next_day_by_id(id: int):
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
-    tomorrow = datetime.datetime.today().weekday() + 1
+    today = datetime.datetime.today().weekday()
+    if today == 6:
+        tomorrow = 0
+        even_week = not even_week
+    else:
+        tomorrow = today + 1
+
     msg = ""
     monday = False
 

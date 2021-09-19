@@ -71,9 +71,10 @@ class PSDB():
         """
         pairs_list = []
         with self._connection.cursor() as cur:
-            cur.execute(f"SELECT * FROM public.pairs WHERE " + \
-                        f"group_name = '{group}' AND even_week = '{even_week}' AND " + \
-                        f"day_of_week = '{day_of_week}' ORDER BY ordinal")
+            sql = f"SELECT * FROM public.pairs WHERE " + \
+                  f"group_name = '{group}' AND even_week = {even_week} AND " + \
+                  f"day_of_week = {day_of_week} ORDER BY ordinal"
+            cur.execute(sql)
             for row in cur.fetchall():
                 pairs_list.append(row)
         return pairs_list
@@ -89,7 +90,8 @@ class PSDB():
             cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
             try:
                 group = list(cur.fetchone())[0]
-                return self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
+                pairs = self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
+                return pairs
             except:
                 return []
 
