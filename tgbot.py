@@ -8,7 +8,7 @@ from aiogram.utils.markdown import text, bold, italic, code, underline, striketh
 from pairs import PSDB
 
 database = None
-API_TOKEN = '1941221231:AAEVvHJUmnIOl6RzcX6lUj5oossETD6I4RU'
+API_TOKEN = '1941221231:AAFzXH2pPygTvTB-SB4oFEDjxvGCSsQP6W8'
 
 ban_list = []
 bot_version = "20210917-1300"
