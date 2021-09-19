@@ -11,7 +11,7 @@ import os
 
 
 database = None
-# API_TOKEN = '1941221231:AAFzXH2pPygTvTB-SB4oFEDjxvGCSsQP6W8'
+# API_TOKEN = '1941221231:AAEVvHJUmnIOl6RzcX6lUj5oossETD6I4RU'
 API_TOKEN = os.environ['BOT_TOKEN']
 
 ban_list = []
