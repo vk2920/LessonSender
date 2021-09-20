@@ -15,7 +15,8 @@ database = None
 API_TOKEN = os.environ['BOT_TOKEN']
 
 ban_list = []
-bot_version = "20210917-1300"
+bot_version = "20210921-1940"
+DEBUG_MODE = True
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -260,13 +261,11 @@ def get_help():
     return "Итак, в этом боте ты можешь узнать расписание на сегодня, " \
            "на завтра, на неделю, на 2 недели (полное расписание)\n" \
            "Тут есть следующие команды (их перечень будет расширяться):\n" \
-           "    " + bold("пары") + " — получить инфу о парах на сегодня или на завтра в зависимости от текущего времени (не злоупотребляй)\n" \
-           "    " + bold("сегодня") + " — получить инфу о парах на сегодня (и пофиг, если ты это делаешь вечером)\n" \
-           "    " + bold("завтра") + " — получить инфу о парах на следующий учебный день (отличный варик для запроса вечером)\n" \
-           "    " + bold("неделя") + " — получить инфу о парах на текущей неделе (в проекте)\n" \
-           "    " + bold("все_пары") + " — получить инфу о всём расписании на 2 недели (в проекте)\n" \
-           "    " + bold("группа") + " — так можно задать свою группу, чтобы не указывать её при запросе\n" \
-           "    " + bold("помощь") + " — ты только что это и сделал, о возможностях этой команды уже знаешь)\n"
+           "    " + bold("1. пары [<название группы>]") + " — получить инфу о парах на сегодня или на завтра в зависимости от текущего времени (не злоупотребляй)\n" \
+           "    " + bold("2. сегодня [<название группы>]") + " — получить инфу о парах на сегодня (и пофиг, если ты это делаешь вечером)\n" \
+           "    " + bold("3. завтра [<название группы>]") + " — получить инфу о парах на следующий учебный день (отличный варик для запроса вечером)\n" \
+           "    " + bold("4. группа <название группы>") + " — так можно задать свою группу, чтобы не указывать её при запросе\n" \
+           "    " + bold("5. помощь") + " — ты только что это и сделал, о возможностях этой команды уже знаешь)\n"
 
 
 @dp.message_handler()
@@ -277,49 +276,59 @@ async def echo(message: types.Message):
     print("-"*80)
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "]")
     print("User ID: " + str(message.from_user.id))
-    print("Username:" + str(message.from_user.username))
+    print("Username: " + str(message.from_user.username))
     print("First name: "+ str(message.from_user.first_name))
     print("Message: " + str(message.text))
 
     if message.from_user.id in ban_list: # Отсеяли забаненых
         await message.answer("Доступ временно закрыт (403)")
     else:
+        msg = ""
+        if DEBUG_MODE:
+            msg += "Бот находится в режиме отладки (поэтапное выполнение алгоритмов с целью поиска ошибок)\n" \
+                   "Это значит, что ответа может не быть (или он будет не сразу)\n\n"
         try:
             cmd = message.text.lower().replace(",", "").split(" ")
             if cmd[0] in ["пары", "gfhs", "pairs", "зфшкы"]:
                 # Тут будет "интуитивное" определение требования пользователя
                 # Либо это будут пары на сегодня
                 # Либо это будут пары на завтра (следующий учебный день)
-                msg = get_pairs(message)
+                msg += get_pairs(message)
 
             elif cmd[0] in ["сегодня", "ctujlyz"]:
                 if datetime.datetime.today().weekday() == 6:
                     await message.answer("Ты долбаёб, сегодня воскресенье")
                     return 0
 
-                if len(cmd) == 2 and cmd[1] != "" and is_group(cmd[1]):
-                    msg = get_today(group=cmd[1])
+                if len(cmd) == 2 and is_group(cmd[1]):
+                    msg += get_today(cmd[1])
+                else:
+                    msg += get_today_by_id(message.from_user.id)
 
             elif cmd[0] in ["завтра", "pfdnhf"]:
-                msg = get_next_day(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
+                if len(cmd) == 2 and is_group(cmd[1]):
+                    msg += get_next_day(cmd[1])
+                else:
+                    msg += get_next_day_by_id(message.from_user.id)
+                # msg = get_next_day(group=(cmd[1] if len(cmd) != 1 else "ис/б-21-3-о"))
 
             elif cmd[0] in ["группа", "uheggf"]:
                 if len(cmd) != 1:
-                    if psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, message.text.split(" ")[1]):
-                        msg = "Ваша группа задана (или изменена)"
+                    if psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, cmd[1]):
+                        msg += "Ваша группа задана (или изменена)"
                     else:
-                        msg = "Ошибка записи в БД, твоя группа не сохранена"
+                        msg += "Ошибка записи в БД, твоя группа не сохранена"
                 else:
-                    msg = "Не хочешь ли ты указать свою группу?\n" + \
+                    msg += "Не хочешь ли ты указать свою группу?\n" + \
                         "Повтори предыдущую команду, исправив свои ошибки\n" + \
                         "Не допусти опечаток в названии группы, иначе х*й тебе, а не расписание\n" + \
                         "Если чё, пиши в таком виде: ИС/б-21-3-о"
 
             elif cmd[0] in ["помощь", "help", "хелп", "хэлп", "рудз", "gjvjom"]:
-                msg = get_help()
+                msg += get_help()
 
             else:
-                msg = "Команда не распознана, я без понятия, что ты хочешь\n" + \
+                msg += "Команда не распознана, я без понятия, что ты хочешь\n" + \
                     "Введи \"help\", чтобы узнать о моих возможностях"
 
         except Exception as _ex:

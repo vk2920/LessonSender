@@ -1,30 +1,6 @@
+import os
+
 import psycopg2
-
-# # Init DB
-# if __name__ == "__main__":
-#     connection = sqlite3.connect("pairs.db")
-#     cursor = connection.cursor()
-#     cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (
-#         `id` int,
-#         `tg_id` int,
-#         `vk_id` int,
-#         `name` text,
-#         `group` text);""")
-#     cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (
-#         `id` int,
-#         `group` text,
-#         `even_week` bool,
-#         `day_of_week` int,
-#         `ordinal` int,
-#         `lesson` text,
-#         `teacher` text,
-#         `type` int,
-#         `location` text);""")
-#     connection.commit()
-#     del cursor
-#     del connection
-#     sys.exit()
-
 
 class PSDB():
     """
@@ -42,11 +18,19 @@ class PSDB():
     """
     def __init__(self):
         try:
+            try:
+                DB_HOST = os.environ["DB_HOST"]
+                DB_USER = os.environ["DB_USER"]
+                DB_PASSWD = os.environ["DB_PASSWD"]
+                DB_NAME = os.environ["DB_NAME"]
+            except:
+                print("Fatal error: Can't connect to Database")
+
             self._connection = psycopg2.connect(
-                host="ec2-34-228-154-153.compute-1.amazonaws.com",
-                user="zdqtijbmodklfd",
-                password="cad60afb471aeb2ef66fa20f0b1a122df9368faef38913f79e8a2c5560616209",
-                database="dgrcd76bjnto5"
+                host=DB_HOST,
+                user=DB_USER,
+                password=DB_PASSWD,
+                database=DB_NAME
             )
         except Exception as _ex:
             print("[ERROR] Can't connect to PostgreSQL server", _ex)
@@ -138,11 +122,21 @@ class PSDB():
         :return: True, если запись произведена успешно, иначе False
         """
         cursor = self._connection.cursor()
-        res = cursor.execute(f"INSERT INTO public.users (tg_id, name, group_name) VALUES ({tg_id}, '{name}', '{group}');")
-        # if res and self._connection.commit():
-        if res and cursor.execute("COMMIT;"):
-            return True
-        return False
+        sql = f"SELECT tg_id FROM public.users WHERE tg_id = {tg_id}"
+        print("Проверка на наличие пользователя:")
+        print(sql)
+        cursor.execute(sql)
+        if len(list(cursor.fetchall())) != 0:
+            sql = f"UPDATE public.users SET group_name = '{group}' WHERE tg_id = {tg_id}"
+            print("Обновление группы существующего пользователя:")
+            print(sql)
+        else:
+            sql = f"INSERT INTO public.users (tg_id, name, group_name) VALUES ({tg_id}, '{name}', '{group}');"
+            print("Регистрация нового пользователя:")
+            print(sql)
+        cursor.execute(sql)
+        self._connection.commit()
+        return True
 
 
 if __name__ == "__main__":
