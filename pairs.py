@@ -114,6 +114,15 @@ class PSDB():
                 pairs_list.append(pair)
         return pairs_list
 
+    def r_user_group_is_set(self, tg_id: int):
+        with self._connection.cursor as cur:
+            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            try:
+                group = list(cur.fetchone())[0]
+                return group
+            except:
+                return False
+
     def w_register_user_by_tgid(self, tg_id: int, name: str, group: str):
         """
         :param tg_id: id пользователя в ТГ (int)
