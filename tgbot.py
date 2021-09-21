@@ -271,6 +271,7 @@ def get_help():
 @dp.message_handler()
 async def echo(message: types.Message):
     # Кинем сообщения в логи
+    print("")
     print("-"*80)
     print("Работает версия от " + bot_version)
     print("-"*80)

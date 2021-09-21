@@ -115,7 +115,7 @@ class PSDB():
         return pairs_list
 
     def r_user_group_is_set(self, tg_id: int):
-        with self._connection.cursor as cur:
+        with self._connection.cursor() as cur:
             cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
             try:
                 group = list(cur.fetchone())[0]
