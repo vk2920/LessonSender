@@ -257,6 +257,42 @@ def get_next_day_by_id(id: int):
     return msg
 
 
+def get_week(group, even_week):
+    msg = ""
+    days_of_week = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+    for i in range(1, 6):
+        msg += days_of_week[i] + "\n"
+        pairs = psdb.r_get_pairs_by_group(day_of_week=i, even_week=even_week, group=group)
+        if len(pairs) != 0:
+            for pair in pairs:
+                pair = list(pair)
+                if pair[6] == "":
+                    pair[6] = "Преподаватель не определён"
+
+                if pair[4] == 1:
+                    pair[4] = "8:30 ~ 10:00\n1. "
+                elif pair[4] == 2:
+                    pair[4] = "10:10 ~ 11:40\n2. "
+                elif pair[4] == 3:
+                    pair[4] = "11:50 ~ 13:20\n3. "
+                elif pair[4] == 4:
+                    pair[4] = "14:00 ~ 15:30\n4. "
+                elif pair[4] == 5:
+                    pair[4] = "15:40 ~ 17:10\n5. "
+                elif pair[4] == 6:
+                    pair[4] = "17:20 ~ 18:50\n6. "
+                elif pair[4] == 7:
+                    pair[4] = "19:00 ~ 20:30\n7. "
+                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
+                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
+                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
+                    str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
+        else:
+            msg += "Нет пар"
+        msg += "\n\n"
+    return msg
+
+
 def get_help():
     return "Итак, в этом боте ты можешь узнать расписание на сегодня, " \
            "на завтра, на неделю, на 2 недели (полное расписание)\n" \
@@ -326,6 +362,17 @@ async def echo(message: types.Message):
                         msg += "Вот твоя группа: " + group
                     else:
                         msg += "У тебя не задана группа"
+
+            elif cmd[0] in ["всё", "все", "dct", "dc`"]:
+                group = psdb.r_user_group_is_set(message.from_user.id)
+                if group:
+                    msg += "Расписание на нечётную неделю:\n"
+                    msg += get_week(group=group, even_week=False)
+                    msg += "Расписание на чётную неделю:\n"
+                    msg += get_week(group=group, even_week=True)
+                else:
+                    msg += "Группа не сохранена, поэтому ничем помочь не могу\n" \
+                           "P.S.: Трюк 'неделя ис/б-21-3-о' не работает"
 
             elif cmd[0] in ["помощь", "help", "хелп", "хэлп", "рудз", "gjvjom"]:
                 msg += get_help()
