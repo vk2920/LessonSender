@@ -260,8 +260,8 @@ def get_next_day_by_id(id: int):
 def get_week(group, even_week):
     msg = ""
     days_of_week = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
-    for i in range(1, 6):
-        msg += days_of_week[i] + "\n"
+    for i in range(1, 7):
+        msg += bold(days_of_week[i]) + "\n"
         pairs = psdb.r_get_pairs_by_group(day_of_week=i, even_week=even_week, group=group)
         if len(pairs) != 0:
             for pair in pairs:
@@ -370,6 +370,28 @@ async def echo(message: types.Message):
                     msg += get_week(group=group, even_week=False)
                     msg += "Расписание на чётную неделю:\n"
                     msg += get_week(group=group, even_week=True)
+                else:
+                    msg += "Группа не сохранена, поэтому ничем помочь не могу\n" \
+                           "P.S.: Трюк 'неделя ис/б-21-3-о' не работает"
+
+            elif cmd[0] in ["чёт", "x`n", "чет", "xtn"]:
+                group = psdb.r_user_group_is_set(message.from_user.id)
+                if group:
+                    # msg += "Расписание на нечётную неделю:\n"
+                    # msg += get_week(group=group, even_week=False)
+                    msg += "Расписание на чётную неделю:\n"
+                    msg += get_week(group=group, even_week=True)
+                else:
+                    msg += "Группа не сохранена, поэтому ничем помочь не могу\n" \
+                           "P.S.: Трюк 'неделя ис/б-21-3-о' не работает"
+
+            elif cmd[0] in ["нечёт", "ytx`n", "нечет", "ytxtn"]:
+                group = psdb.r_user_group_is_set(message.from_user.id)
+                if group:
+                    msg += "Расписание на нечётную неделю:\n"
+                    msg += get_week(group=group, even_week=False)
+                    # msg += "Расписание на чётную неделю:\n"
+                    # msg += get_week(group=group, even_week=True)
                 else:
                     msg += "Группа не сохранена, поэтому ничем помочь не могу\n" \
                            "P.S.: Трюк 'неделя ис/б-21-3-о' не работает"
