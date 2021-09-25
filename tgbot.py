@@ -134,6 +134,10 @@ def get_today_by_id(id: int):
     today = datetime.datetime.today().weekday()
     msg = ""
     if today != 6:  # Если сегодня не воскресенье
+        group = psdb.r_user_group_is_set(id=id)
+        if not group:
+            return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
+                   "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
         pairs = psdb.r_get_pairs_by_tgid(day_of_week=today+1, even_week=even_week, tg_id=id)
         if len(pairs) != 0:
             msg += bold("Вот твоё расписание на сегодня:") + "\n"
@@ -226,6 +230,10 @@ def get_next_day_by_id(id: int):
         even_week = not even_week
 
     if tomorrow != 6: # Если завтра не воскресенье
+        group = psdb.r_user_group_is_set(id=id)
+        if not group:
+            return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
+                   "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
         msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
         pairs = psdb.r_get_pairs_by_tgid(day_of_week=tomorrow + 1, even_week=even_week, tg_id=id)
         if len(pairs) != 0:
