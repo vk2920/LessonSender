@@ -1,31 +1,6 @@
-import sqlite3
-import sys
+import os
 
-# # Init DB
-# if __name__ == "__main__":
-#     connection = sqlite3.connect("pairs.db")
-#     cursor = connection.cursor()
-#     cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (
-#         `id` int,
-#         `tg_id` int,
-#         `vk_id` int,
-#         `name` text,
-#         `group` text);""")
-#     cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (
-#         `id` int,
-#         `group` text,
-#         `even_week` bool,
-#         `day_of_week` int,
-#         `ordinal` int,
-#         `lesson` text,
-#         `teacher` text,
-#         `type` int,
-#         `location` text);""")
-#     connection.commit()
-#     del cursor
-#     del connection
-#     sys.exit()
-
+import psycopg2
 
 class PSDB():
     """
@@ -41,22 +16,30 @@ class PSDB():
      -- w_register_user_by_tgid(self, tg_id, name, group)
      -- w_register_user_by_vkid(self, vk_id, name, group)
     """
-    def __init__(self, fname="pairs.db"):
-        """
-        :param fname: имя файла базы данных (по умолчанию "pairs.db")
-        """
-        self._connection = sqlite3.connect(fname)
-        # cursor = self._connection.cursor()
-        # cursor.execute("""CREATE TABLE IF NOT EXISTS `users` (`id` int, `tg_id` int,
-        #         `vk_id` int, `name` text, `group` text)""")
-        # cursor.execute("""CREATE TABLE IF NOT EXISTS `pairs` (`id` int, `group` text,
-        #         `even_week` bool, `day_of_week` int, `lesson` text, `teacher` text, `type` int, `location` text)""")
-        # self._connection.commit()
-        # del cursor
+    def __init__(self):
+        try:
+            try:
+                DB_HOST = os.environ["DB_HOST"]
+                DB_USER = os.environ["DB_USER"]
+                DB_PASSWD = os.environ["DB_PASSWD"]
+                DB_NAME = os.environ["DB_NAME"]
+            except:
+                print("Fatal error: Can't connect to Database")
+
+            self._connection = psycopg2.connect(
+                host=DB_HOST,
+                user=DB_USER,
+                password=DB_PASSWD,
+                database=DB_NAME
+            )
+        except Exception as _ex:
+            print("[ERROR] Can't connect to PostgreSQL server", _ex)
 
     def __del__(self):
-        del self._connection
-        del self
+        if self._connection:
+            self._connection.close()
+            del self._connection
+        print(" [INFO] Connection to PostgreSQL closed")
 
     def r_get_pairs_by_group(self, day_of_week: int, even_week: bool, group: str):
         """
@@ -70,13 +53,16 @@ class PSDB():
              -- о — очная форма обучения (з — заочная)
         :return: список пар на запрошенный день
         """
-        cursor = self._connection.cursor()
         pairs_list = []
-        for row in cursor.execute(f"""SELECT * FROM `pairs` WHERE 
-                `group` = '{group}' AND `even_week` = '{even_week}' AND 
-                `day_of_week` = '{day_of_week}' ORDER BY `ordinal`"""):
-            pairs_list.append(row)
-        del cursor
+        with self._connection.cursor() as cur:
+            sql = f"SELECT * FROM public.pairs WHERE " + \
+                  f"group_name = '{group}' AND even_week = {even_week} AND " + \
+                  f"day_of_week = {day_of_week} ORDER BY ordinal"
+            print("Получение списка пар по группе:")
+            print(sql)
+            cur.execute(sql)
+            for row in cur.fetchall():
+                pairs_list.append(row)
         return pairs_list
 
     def r_get_pairs_by_tgid(self, day_of_week: int, even_week: bool, tg_id: int):
@@ -86,22 +72,56 @@ class PSDB():
         :param tg_id: id пользователя в ТГ (int)
         :return: список пар на запрошенный день
         """
-        cursor = self._connection.cursor()
-        group = list(cursor.execute("""SELECT `group` FROM `users` WHERE `tg_id` = (?) LIMIT 1""", (tg_id,)))[0][0]
-        del cursor
-        return self.r_get_pairs_by_group(day_of_week, even_week, group)
+        with self._connection.cursor() as cur:
+            sql = f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1"""
+            print("Получение группы пользователя:")
+            print(sql)
+            cur.execute(sql)
+            try:
+                group = list(cur.fetchone())[0]
+                pairs = self.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
+                return pairs
+            except:
+                try:
+                    return []
+                finally:
+                    pass
 
-    def r_get_pairs_by_vkid(self, day_of_week: int, even_week: bool, vk_id: int):
+    def r_get_exceptions_by_tgid(self, date: str, tg_id: int):
         """
-        :param day_of_week: порядковый номер дня недели (int, 1~6)
-        :param even_week: True, если неделя чётная, иначе False
-        :param vk_id: id пользователя в ВК (int)
-        :return: список пар на запрошенный день
+        :param date: дата, неожиданные пары на которую нужно получить
+        :param tg_id: id пользователя в ТГ (int)
+        :return:
         """
-        cursor = self._connection.cursor()
-        group = list(cursor.execute("""SELECT `group` FROM `users` WHERE `vk_id` = (?) LIMIT 1""", (vk_id,)))[0][0]
-        del cursor
-        return self.r_get_pairs_by_group(day_of_week, even_week, group)
+        with self._connection.cursor() as cur:
+            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            try:
+                group = list(cur.fetchone())[0]
+                return self.r_get_exceptions_by_group(date=date, group=group)
+            except:
+                return "Твоя группа не указана в БД"
+
+    def r_get_exceptions_by_group(self, date: str, group: str):
+        """
+        :param date: дата, неожиданные пары на которую нужно получить
+        :param group: группа, пары которой нужно получить
+        :return: список кортежей с данными о парах, которых нет в расписании
+        """
+        pairs_list = []
+        with self._connection.cursor() as cur:
+            cur.execute(f"SELECT * FROM public.exceptions WHERE date = {date} AND group = '{group}' ORDER BY ordinal")
+            for pair in cur.fetchall():
+                pairs_list.append(pair)
+        return pairs_list
+
+    def r_user_group_is_set(self, tg_id: int):
+        with self._connection.cursor() as cur:
+            cur.execute(f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1""")
+            try:
+                group = list(cur.fetchone())[0]
+                return group
+            except:
+                return False
 
     def w_register_user_by_tgid(self, tg_id: int, name: str, group: str):
         """
@@ -111,24 +131,31 @@ class PSDB():
         :return: True, если запись произведена успешно, иначе False
         """
         cursor = self._connection.cursor()
-        res = cursor.execute(f"""INSERT INTO `users` (`tg_id`, `name`, `group`) VALUES ({tg_id}, '{name}', '{group}')""")
-        del cursor
-        if res and self._connection.commit():
-            return True
-        return False
+        sql = f"SELECT tg_id FROM public.users WHERE tg_id = {tg_id}"
+        print("Проверка на наличие пользователя:")
+        print(sql)
+        cursor.execute(sql)
+        if len(list(cursor.fetchall())) != 0:
+            sql = f"UPDATE public.users SET group_name = '{group}' WHERE tg_id = {tg_id}"
+            print("Обновление группы существующего пользователя:")
+            print(sql)
+        else:
+            sql = f"INSERT INTO public.users (tg_id, name, group_name) VALUES ({tg_id}, '{name}', '{group}');"
+            print("Регистрация нового пользователя:")
+            print(sql)
+        cursor.execute(sql)
+        self._connection.commit()
+        return True
 
-    # def w_remove_pair_by_timecoord_and_location(self, even_week: bool, day_of_week: int, ordinal: int, location: str):
-    #     """
-    #     :param even_week:
-    #     :param day_of_week:
-    #     :param ordinal:
-    #     :param location:
-    #     :return:
-    #     """
-    #     pass
-
-if __name__ == "__main__":
-    psdb = PSDB("pairs.db")
-    tomorrow = psdb.r_get_pairs_by_group(day_of_week=4, even_week=False, group="ИС/б-21-3-о")
-    for pair in tomorrow:
-        print(pair)
+    def w_remove_user_group(self, tg_id: int):
+        """
+        :param tg_id: id пользователя в ТГ (int)
+        :return: True, если запись произведена успешно, иначе False
+        """
+        cursor = self._connection.cursor()
+        sql = f"DELETE FROM public.users WHERE tg_id = {tg_id}"
+        print("Удаление пользователя из БД:")
+        print(sql)
+        cursor.execute(sql)
+        self._connection.commit()
+        return True
