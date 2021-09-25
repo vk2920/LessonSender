@@ -358,10 +358,13 @@ async def echo(message: types.Message):
 
             elif cmd[0] in ["группа", "uheggf"]:
                 if len(cmd) != 1:
-                    if psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, cmd[1]):
-                        msg += "Ваша группа задана (или изменена)"
+                    if cmd[1] in ["нет", "ytn", "очистить", "jxbcnbnm"]:
+                        psdb.w_remove_user_group(message.from_user.id)
                     else:
-                        msg += "Ошибка записи в БД, твоя группа не сохранена"
+                        if psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, cmd[1]):
+                            msg += "Ваша группа задана (или изменена)"
+                        else:
+                            msg += "Ошибка записи в БД, твоя группа не сохранена"
                 else:
                     group = psdb.r_user_group_is_set(message.from_user.id)
                     if group:

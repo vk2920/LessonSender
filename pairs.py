@@ -147,10 +147,15 @@ class PSDB():
         self._connection.commit()
         return True
 
-
-if __name__ == "__main__":
-    psdb = PSDB()
-    print(psdb.w_register_user_by_tgid(470985286, "Вадим", "ис/б-21-3-о"))
-    # pairs = psdb.r_get_pairs_by_group(day_of_week=1, even_week=True, group="ис/б-21-3-о")
-    # for pair in pairs:
-    #     print(pair)
+    def w_remove_user_group(self, tg_id: int):
+        """
+        :param tg_id: id пользователя в ТГ (int)
+        :return: True, если запись произведена успешно, иначе False
+        """
+        cursor = self._connection.cursor()
+        sql = f"DELETE FROM public.users WHERE tg_id = {tg_id}"
+        print("Удаление пользователя из БД:")
+        print(sql)
+        cursor.execute(sql)
+        self._connection.commit()
+        return True
