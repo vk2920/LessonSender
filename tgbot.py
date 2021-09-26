@@ -134,7 +134,7 @@ def get_today_by_id(id: int):
     today = datetime.datetime.today().weekday()
     msg = ""
     if today != 6:  # Если сегодня не воскресенье
-        group = psdb.r_user_group_is_set(id=id)
+        group = psdb.r_user_group_is_set(tg_id=id)
         if not group:
             return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
                    "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
@@ -230,7 +230,7 @@ def get_next_day_by_id(id: int):
         even_week = not even_week
 
     if tomorrow != 6: # Если завтра не воскресенье
-        group = psdb.r_user_group_is_set(id=id)
+        group = psdb.r_user_group_is_set(tg_id=id)
         if not group:
             return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
                    "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
