@@ -458,21 +458,21 @@ async def radius(message: types.Message, state: FSMContext):
     group = message.text.lower()
     if is_group(group=group):
         psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, group)
-        await message.answer("Твоя группа задана", reply_markup=bot_keyboard)
+        await message.answer("Твоя группа задана", reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     elif group in ["нет", "ytn", "очистить", "jxbcnbnm"]:
         psdb.w_remove_user_group(message.from_user.id)
-        await message.answer("Твоя группа удалена из БД", reply_markup=bot_keyboard)
+        await message.answer("Твоя группа удалена из БД", reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     elif group in ["посмотреть", "gjcvjnhtnm"]:
         group = psdb.r_user_group_is_set(message.from_user.id)
-        await message.answer("Вот твоя группа: " + bold(str(group)), reply_markup=bot_keyboard)
+        await message.answer("Вот твоя группа: " + bold(str(group)), reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     elif group in ["отмена", "jnvtyf"]:
-        await message.answer("Смена группы отменена", reply_markup=bot_keyboard)
+        await message.answer("Смена группы отменена", reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     else:
-        await message.answer("ВВЕДИ СВОЮ ГРУППУ")
+        await message.answer(bold("ВВЕДИ СВОЮ ГРУППУ"), parse_mode=types.ParseMode.MARKDOWN)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
