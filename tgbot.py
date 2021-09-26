@@ -4,10 +4,18 @@ import logging
 import pytz
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.utils.markdown import text, bold, italic, code, underline, strikethrough, link
+from aiogram.types import ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.dispatcher import FSMContext
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from pairs import PSDB
 
 import os
+
+
+class DataInput(StatesGroup):
+    r = State()
 
 
 database = None
@@ -23,7 +31,18 @@ logging.basicConfig(level=logging.INFO)
 
 # Initialize bot and dispatcher
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, storage=MemoryStorage())
+
+bot_keyboard = ReplyKeyboardMarkup()
+bot_keyboard.add(KeyboardButton("Пары"))
+bot_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
+bot_keyboard.row(KeyboardButton("Чёт"), (KeyboardButton("Нечёт")))
+bot_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Помощь"))
+
+group_update_keyboard = ReplyKeyboardMarkup()
+group_update_keyboard.row(KeyboardButton("Посмотреть"), KeyboardButton("Очистить"))
+group_update_keyboard.add(KeyboardButton("Отмена"))
+
 psdb = PSDB()
 
 
@@ -68,13 +87,7 @@ def get_pairs(message: types.Message):
     print("Сообщение в виде команды: " + str(cmd))
     print("           Длина команды: " + str(len(cmd)))
 
-    # Текст в начале сообщения
-    msg ="Я составляю ответ на основе содержимого своей базы данных\n" + \
-          "Так что расписание может быть неактуальным\n" \
-          "В любом случае, ты можешь предупредить администратора о несостыковках\n" \
-          "Почта: vk2920@yandex.ru\n" \
-          "ТГ: @vkw2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
-    print("Дбавлен заголовок сообщения")
+    msg = ""
 
     # Добавим к ответу бота расписание на сегодня
     if len(cmd) == 2 and is_group(cmd[1]):
@@ -331,7 +344,14 @@ async def echo(message: types.Message):
     if message.from_user.id in ban_list: # Отсеяли забаненых
         await message.answer("Доступ временно закрыт (403)")
     else:
-        msg = ""
+        # Текст в начале сообщения
+        msg = "Я составляю ответ на основе содержимого своей базы данных\n" + \
+              "Так что расписание может быть неактуальным\n" \
+              "В любом случае, ты можешь предупредить администратора о несостыковках\n" \
+              "Почта: vk2920@yandex.ru\n" \
+              "ТГ: @vkw2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
+        print("Дбавлен заголовок сообщения")
+
         if DEBUG_MODE:
             msg += "Бот находится в режиме отладки (поэтапное выполнение алгоритмов с целью поиска ошибок)\n" \
                    "Это значит, что ответа может не быть (или он будет не сразу)\n\n"
@@ -369,13 +389,9 @@ async def echo(message: types.Message):
                         else:
                             msg += "Ошибка записи в БД, твоя группа не сохранена"
                 else:
-                    group = psdb.r_user_group_is_set(message.from_user.id)
-                    if group:
-                        group = group.split("/")
-                        group = group[0].upper() + "/" + group[1]
-                        msg += "Вот твоя группа: " + group
-                    else:
-                        msg += "У тебя не задана группа"
+                    await message.answer('Напиши свою группу', parse_mode=types.ParseMode.MARKDOWN, reply_markup=group_update_keyboard)
+                    await DataInput.r.set()
+                    return 0
 
             elif cmd[0] in ["всё", "все", "dct", "dc`"]:
                 group = psdb.r_user_group_is_set(message.from_user.id)
@@ -429,12 +445,34 @@ async def echo(message: types.Message):
 
         # Ассинхронный ответ на сообщение пользователя
         try:
-            await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN)
+            await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN, reply_markup=bot_keyboard)
         except:
             msg = "На стороне сервера сработало исключение (Error 500)\n" \
                   "Методом \"научного тыка\" было определено, что это чаще всего связано с форматированием текста " \
                   "(которого нет)\n\n" + msg
-            await message.answer(msg)
+            await message.answer(msg, reply_markup=bot_keyboard)
+
+
+@dp.message_handler(state=DataInput.r)
+async def radius(message: types.Message, state: FSMContext):
+    group = message.text.lower()
+    if is_group(group=group):
+        psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, group)
+        await message.answer("Твоя группа задана", reply_markup=bot_keyboard)
+        await state.finish()
+    elif group in ["нет", "ytn", "очистить", "jxbcnbnm"]:
+        psdb.w_remove_user_group(message.from_user.id)
+        await message.answer("Твоя группа удалена из БД", reply_markup=bot_keyboard)
+        await state.finish()
+    elif group in ["посмотреть", "gjcvjnhtnm"]:
+        group = psdb.r_user_group_is_set(message.from_user.id)
+        await message.answer("Вот твоя группа: " + bold(str(group)), reply_markup=bot_keyboard)
+        await state.finish()
+    elif group in ["отмена", "jnvtyf"]:
+        await message.answer("Смена группы отменена", reply_markup=bot_keyboard)
+        await state.finish()
+    else:
+        await message.answer("ВВЕДИ СВОЮ ГРУППУ")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
