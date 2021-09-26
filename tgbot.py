@@ -36,7 +36,7 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 bot_keyboard = ReplyKeyboardMarkup()
 bot_keyboard.add(KeyboardButton("Пары"))
 bot_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
-bot_keyboard.row(KeyboardButton("Чёт"), (KeyboardButton("Нечёт")))
+bot_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
 bot_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Помощь"))
 
 group_update_keyboard = ReplyKeyboardMarkup()
