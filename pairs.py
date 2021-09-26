@@ -24,7 +24,7 @@ class PSDB():
                 DB_PASSWD = os.environ["DB_PASSWD"]
                 DB_NAME = os.environ["DB_NAME"]
             except:
-                print("Fatal error: Can't connect to Database")
+                print("Ошибка: Нет переменных окружения для доступа к БД")
 
             self._connection = psycopg2.connect(
                 host=DB_HOST,
@@ -33,13 +33,12 @@ class PSDB():
                 database=DB_NAME
             )
         except Exception as _ex:
-            print("[ERROR] Can't connect to PostgreSQL server", _ex)
+            print("Ошибка: Не удалось подключиться к БД", _ex)
 
     def __del__(self):
         if self._connection:
             self._connection.close()
             del self._connection
-        print(" [INFO] Connection to PostgreSQL closed")
 
     def r_get_pairs_by_group(self, day_of_week: int, even_week: bool, group: str):
         """
@@ -58,8 +57,6 @@ class PSDB():
             sql = f"SELECT * FROM public.pairs WHERE " + \
                   f"group_name = '{group}' AND even_week = {even_week} AND " + \
                   f"day_of_week = {day_of_week} ORDER BY ordinal"
-            print("Получение списка пар по группе:")
-            print(sql)
             cur.execute(sql)
             for row in cur.fetchall():
                 pairs_list.append(row)
@@ -74,8 +71,6 @@ class PSDB():
         """
         with self._connection.cursor() as cur:
             sql = f"""SELECT group_name FROM public.users WHERE tg_id = {tg_id} LIMIT 1"""
-            print("Получение группы пользователя:")
-            print(sql)
             cur.execute(sql)
             try:
                 group = list(cur.fetchone())[0]
@@ -132,17 +127,11 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         sql = f"SELECT tg_id FROM public.users WHERE tg_id = {tg_id}"
-        print("Проверка на наличие пользователя:")
-        print(sql)
         cursor.execute(sql)
         if len(list(cursor.fetchall())) != 0:
             sql = f"UPDATE public.users SET group_name = '{group}' WHERE tg_id = {tg_id}"
-            print("Обновление группы существующего пользователя:")
-            print(sql)
         else:
             sql = f"INSERT INTO public.users (tg_id, name, group_name) VALUES ({tg_id}, '{name}', '{group}');"
-            print("Регистрация нового пользователя:")
-            print(sql)
         cursor.execute(sql)
         self._connection.commit()
         return True
@@ -154,8 +143,6 @@ class PSDB():
         """
         cursor = self._connection.cursor()
         sql = f"DELETE FROM public.users WHERE tg_id = {tg_id}"
-        print("Удаление пользователя из БД:")
-        print(sql)
         cursor.execute(sql)
         self._connection.commit()
         return True

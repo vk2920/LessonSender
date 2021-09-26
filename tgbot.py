@@ -47,7 +47,6 @@ psdb = PSDB()
 
 
 def is_group(group: str):
-    print("Проверка строки, действительно ли это группа")
     group = group.split("/")
     if len(group) != 2:
         return False
@@ -78,14 +77,11 @@ def is_group(group: str):
 
 
 def get_pairs(message: types.Message):
-    print("Получение списка пар (команда 'пары')")
     # Определим чётность недели и номера нужных дней недели
     even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
     today = datetime.datetime.today().weekday()
     tomorrow = today+1 if today != 6 else 0
     cmd = message.text.lower().replace(",", "").split(" ")
-    print("Сообщение в виде команды: " + str(cmd))
-    print("           Длина команды: " + str(len(cmd)))
 
     msg = ""
 
@@ -94,14 +90,12 @@ def get_pairs(message: types.Message):
         msg += get_today(group=cmd[1])
     else:
         msg += get_today_by_id(message.from_user.id)
-    print("Добавлено расписане на сегодня")
 
     # Добавим в сообщение расписание на завтра
     if len(cmd) == 2 and cmd[1] != "" and is_group(cmd[1]):
         msg += get_next_day(group=cmd[1])
     else:
         msg += get_next_day_by_id(message.from_user.id)
-    print("Добавлено расписане на завтра")
 
     return msg
 
@@ -332,13 +326,8 @@ def get_help():
 async def echo(message: types.Message):
     # Кинем сообщения в логи
     print("")
-    print("-"*80)
-    print("Работает версия от " + bot_version)
-    print("-"*80)
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "]")
-    print("User ID: " + str(message.from_user.id))
-    print("Username: " + str(message.from_user.username))
-    print("First name: "+ str(message.from_user.first_name))
+    print("ID - username - name: " + str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + str(message.from_user.first_name))
     print("Message: " + str(message.text))
 
     if message.from_user.id in ban_list: # Отсеяли забаненых
@@ -350,7 +339,6 @@ async def echo(message: types.Message):
               "В любом случае, ты можешь предупредить администратора о несостыковках\n" \
               "Почта: vk2920@yandex.ru\n" \
               "ТГ: @vkw2920    VK: " + link('@vk_2920', 'https://vk.com/im?sel=219099321') + "\n\n"
-        print("Дбавлен заголовок сообщения")
 
         if DEBUG_MODE:
             msg += "Бот находится в режиме отладки (поэтапное выполнение алгоритмов с целью поиска ошибок)\n" \
