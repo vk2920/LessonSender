@@ -327,7 +327,9 @@ async def echo(message: types.Message):
     # Кинем сообщения в логи
     print("")
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "]")
-    print("ID - username - name: " + str(message.from_user.id) + " - " + str(message.from_user.username) + " - " + str(message.from_user.first_name))
+    print("ID".ljust(len(message.from_user.id), " ") + " - " + "username".ljust(len(message.from_user.username), " ") + \
+          " - " + "name".ljust(len(message.from_user.first_name), " ") + ":")
+    print(str(message.from_user.id).ljust(2, " ") + " - " + str(message.from_user.username).ljust(8, " ") + " - " + str(message.from_user.first_name).ljust(4, " "))
     print("Message: " + str(message.text))
 
     if message.from_user.id in ban_list: # Отсеяли забаненых
