@@ -509,7 +509,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
                              reply_markup=day_of_week_keyboard)
         return 0
 
-    if day[0] in days_of_week_list:
+    if day[0].upper() in days_of_week_list:
         day_of_week = days_of_week_list.index(day[0])
     else:
         await message.answer("Ошибка в дне недели, можешь воспользоваться клавиатурой бота)",
