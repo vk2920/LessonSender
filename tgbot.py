@@ -426,8 +426,9 @@ async def echo(message: types.Message):
                            "P.S.: Трюк 'неделя ис/б-21-3-о' не работает"
 
             elif cmd[0] in ["конкретный_день", "rjyrhtnysq_ltym"]:
-                await DataInput.day_of_week.set()
                 await message.answer("Выбери нужный день недели", reply_markup=day_of_week_keyboard)
+                await DataInput.day_of_week.set()
+                return 0
 
             elif cmd[0] in ["помощь", "help", "хелп", "хэлп", "рудз", "gjvjom"]:
                 msg += get_help()
@@ -491,7 +492,6 @@ async def group_msg(message: types.Message, state: FSMContext):
 @dp.message_handler(state=DataInput.day_of_week)
 async def day_of_week_msg(message: types.Message, state: FSMContext):
     day = message.text.lower().split(" ")
-    print(day)
     if len(day) != 2:
         if day[0] in ["вернуться", "dthyenmcz"]:
             await message.answer("Возвращаемя)", reply_markup=bot_keyboard)
@@ -529,7 +529,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
 
         pairs = psdb.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
         if len(pairs) != 0:
-            msg += bold("Вот твоё расписание на выбранный день:") + "\n"
+            msg += bold("Вот твоё расписание на выбранный день (" + days_of_week[day_of_week] + "):") + "\n"
             for pair in pairs:
                 pair = list(pair)
                 if pair[6] == "":
