@@ -491,24 +491,28 @@ async def group_msg(message: types.Message, state: FSMContext):
 @dp.message_handler(state=DataInput.day_of_week)
 async def day_of_week_msg(message: types.Message, state: FSMContext):
     day = message.text.lower().split(" ")
+    print(day)
     if len(day) != 2:
         await message.answer("Введено что-то неправильное, можешь воспользоваться клавиатурой бота)",
                              reply_markup=day_of_week_keyboard)
         return 0
+    elif day[0] in ["вернуться", "dthyenmcz"]:
+        await message.answer("Возвращаемя)", reply_markup=bot_keyboard)
+        await state.finish()
 
     if day[1] in ["чёт", "x`n", "чет", "xtn"]:
         even_week = True
     elif day[1] in ["нечёт", "ytx`n", "нечет", "ytxtn"]:
         even_week = False
     else:
-        await message.answer("Введено что-то неправильное, можешь воспользоваться клавиатурой бота)",
+        await message.answer("Ошибка в чётности недели, можешь воспользоваться клавиатурой бота)",
                              reply_markup=day_of_week_keyboard)
         return 0
 
     if day[0] in days_of_week_list:
         day_of_week = days_of_week_list.index(day[0])
     else:
-        await message.answer("Введено что-то неправильное, можешь воспользоваться клавиатурой бота)",
+        await message.answer("Ошибка в дне недели, можешь воспользоваться клавиатурой бота)",
                              reply_markup=day_of_week_keyboard)
         return 0
 
