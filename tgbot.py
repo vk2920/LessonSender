@@ -456,9 +456,12 @@ async def radius(message: types.Message, state: FSMContext):
         await state.finish()
     elif group in ["посмотреть", "gjcvjnhtnm"]:
         group = psdb.r_user_group_is_set(message.from_user.id)
-        group = group.split("/")
-        group = group[0].upper() + "/" + group[1]
-        await message.answer(str("Вот твоя группа: " + bold(str(group))).replace('\\', ''), reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
+        if group:
+            group = group.split("/")
+            group = group[0].upper() + "/" + group[1]
+            await message.answer(str("Вот твоя группа: " + bold(str(group))).replace('\\', ''), reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
+        else:
+            await message.answer("У тебя не задана группа", reply_markup=bot_keyboard)
         await state.finish()
     elif group in ["отмена", "jnvtyf"]:
         await message.answer("Смена группы отменена".replace('\\', ''), reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
