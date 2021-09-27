@@ -325,13 +325,6 @@ def get_help():
 @dp.message_handler()
 async def echo(message: types.Message):
     # Кинем сообщения в логи
-    # print("")
-    # print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "]")
-    # print("ID".ljust(len(str(message.from_user.id)), " ") + " - " + "username".ljust(len(str(message.from_user.username)), " ") + \
-    #       " - " + "name".ljust(len(str(message.from_user.first_name)), " ") + ":")
-    # print(str(message.from_user.id).ljust(2, " ") + " - " + str(message.from_user.username).ljust(8, " ") + " - " + str(message.from_user.first_name).ljust(4, " "))
-    # print("Message: " + str(message.text))
-    print("-"*40)
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " + \
           str(message.from_user.first_name) + " (" + str(message.from_user.id) + " / " + \
           str(message.from_user.username) + ") написал: " + str(message.text))
