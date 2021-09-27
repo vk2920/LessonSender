@@ -37,8 +37,7 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 bot_keyboard = ReplyKeyboardMarkup()
-bot_keyboard.add(KeyboardButton("Пары"))
-bot_keyboard.add(KeyboardButton("Конкретный_день"))
+bot_keyboard.row(KeyboardButton("Конкретный_день"), KeyboardButton("Пары"))
 bot_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
 bot_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
 bot_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Помощь"))
@@ -52,7 +51,6 @@ day_of_week_keyboard.row(KeyboardButton("ПН Чёт"), KeyboardButton("ВТ Ч�
 day_of_week_keyboard.row(KeyboardButton("ЧТ Чёт"), KeyboardButton("ПТ Чёт"), KeyboardButton("СБ Чёт"))
 day_of_week_keyboard.row(KeyboardButton("ПН Нечёт"), KeyboardButton("ВТ Нечёт"), KeyboardButton("СР Нечёт"))
 day_of_week_keyboard.row(KeyboardButton("ЧТ Нечёт"), KeyboardButton("ПТ Нечёт"), KeyboardButton("СБ Нечёт"))
-day_of_week_keyboard.add(KeyboardButton("Вернуться"))
 
 psdb = PSDB()
 
