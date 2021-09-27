@@ -493,12 +493,14 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
     day = message.text.lower().split(" ")
     print(day)
     if len(day) != 2:
+        if day[0] in ["вернуться", "dthyenmcz"]:
+            await message.answer("Возвращаемя)", reply_markup=bot_keyboard)
+            await state.finish()
+            return 0
+
         await message.answer("Введено что-то неправильное, можешь воспользоваться клавиатурой бота)",
                              reply_markup=day_of_week_keyboard)
         return 0
-    elif day[0] in ["вернуться", "dthyenmcz"]:
-        await message.answer("Возвращаемя)", reply_markup=bot_keyboard)
-        await state.finish()
 
     if day[1] in ["чёт", "x`n", "чет", "xtn"]:
         even_week = True
@@ -510,7 +512,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
         return 0
 
     if day[0].upper() in days_of_week_list:
-        day_of_week = days_of_week_list.index(day[0])
+        day_of_week = days_of_week_list.index(day[0].upper())
     else:
         await message.answer("Ошибка в дне недели, можешь воспользоваться клавиатурой бота)",
                              reply_markup=day_of_week_keyboard)
