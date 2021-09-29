@@ -17,6 +17,7 @@ import os
 class DataInput(StatesGroup):
     group = State()
     day_of_week = State()
+    admin = State()
 
 
 database = None
@@ -24,6 +25,7 @@ database = None
 API_TOKEN = os.environ['BOT_TOKEN']
 
 ban_list = []
+admin_list = [470985286]
 days_of_week_list = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"]
 days_of_week = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 bot_version = "20210921-1800"
@@ -41,6 +43,12 @@ bot_keyboard.row(KeyboardButton("Конкретный_день"), KeyboardButton
 bot_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
 bot_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
 bot_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Помощь"))
+
+admin_keyboard = ReplyKeyboardMarkup()
+admin_keyboard.row(KeyboardButton("Конкретный_день"), KeyboardButton("Пары"))
+admin_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
+admin_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
+admin_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Админ"), KeyboardButton("Помощь"))
 
 group_update_keyboard = ReplyKeyboardMarkup()
 group_update_keyboard.row(KeyboardButton("Посмотреть"), KeyboardButton("Очистить"))
@@ -426,6 +434,11 @@ async def echo(message: types.Message):
             elif cmd[0] in ["конкретный_день", "rjyrhtnysq_ltym"]:
                 await message.answer("Выбери нужный день недели", reply_markup=day_of_week_keyboard)
                 await DataInput.day_of_week.set()
+                return 0
+
+            elif cmd[0] in ["admin", "админ"] and message.from_user.id in admin_list:
+                await message.answer("Панель администрирования\nВыбери действие", reply_markup=admin_keyboard)
+                await DataInput.admin.set()
                 return 0
 
             elif cmd[0] in ["помощь", "help", "хелп", "хэлп", "рудз", "gjvjom"]:
