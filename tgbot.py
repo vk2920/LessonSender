@@ -146,7 +146,7 @@ def get_today(group: str):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
                        code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("Сегодня нет пар") + "\n"
+            msg += bold("Сегодня работать на заводе не планируется") + "\n"
     return msg
 
 
@@ -186,7 +186,7 @@ def get_today_by_id(id: int):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
                        code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("Сегодня нет пар") + "\n\n"
+            msg += bold("Сегодня работать на заводе не планируется") + "\n\n"
     return msg
 
 
@@ -229,7 +229,7 @@ def get_next_day(group: str):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
                     str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("Завтра выходной, хоть и не воскресенье" if not monday else "В понедельник нет пар (выходной)")
+            msg += bold("Завтра на заводе работать не планируется" if not monday else "В понедельник на заводе работать не планируется")
     return msg
 
 
@@ -282,7 +282,7 @@ def get_next_day_by_id(id: int):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
                     str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("Завтра выходной, хоть и не воскресенье" if not monday else "В понедельник нет пар (выходной)")
+            msg += bold("Завтра на заводе работать не планируется" if not monday else "В понедельник на заводе работать не планируется")
     return msg
 
 
@@ -565,7 +565,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
                 msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
                        code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
         else:
-            msg += bold("В выбранный день (" + days_of_week[day_of_week] + ") нет пар") + "\n"
+            msg += bold("В выбранный день (" + days_of_week[day_of_week] + ") на заводе работать не планируется") + "\n"
 
         # Ассинхронный ответ на сообщение пользователя
         try:
