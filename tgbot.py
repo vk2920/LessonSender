@@ -469,6 +469,13 @@ async def echo(message: types.Message):
             await message.answer(msg, reply_markup=bot_keyboard)
 
 
+@dp.message_handler(state=DataInput.admin)
+async def admin_msg(message: types.Message, state: FSMContext):
+    await message.answer("Интерфейс администрирования пока недоступен, так как не реализован.\n"
+                         "Давай пока будем просто узнавать расписание для своей группы", reply_markup=bot_keyboard)
+    await state.finish()
+
+
 @dp.message_handler(state=DataInput.group)
 async def group_msg(message: types.Message, state: FSMContext):
     group = message.text.lower()
