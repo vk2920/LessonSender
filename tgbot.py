@@ -93,6 +93,36 @@ def is_group(group: str):
     return True
 
 
+def print_pairs(pairs: list, day_of_week: int, even_week: bool):
+    if len(pairs) == 0:
+        return bold(days_of_week[day_of_week] +
+               (" чётной недели" if even_week else " нечётной недели") + ". На заводе не работаем") + "\n"
+    msg = bold("Вот твоё расписание на выбранный день (" + days_of_week[day_of_week] +
+               (" чётной недели" if even_week else " нечётной недели") + "):") + "\n"
+    for pair in pairs:
+        pair = list(pair)
+        if pair[6] == "":
+            pair[6] = "Преподаватель не определён"
+
+        if pair[4] == 1:
+            pair[4] = "8:30 ~ 10:00\n1. "
+        elif pair[4] == 2:
+            pair[4] = "10:10 ~ 11:40\n2. "
+        elif pair[4] == 3:
+            pair[4] = "11:50 ~ 13:20\n3. "
+        elif pair[4] == 4:
+            pair[4] = "14:00 ~ 15:30\n4. "
+        elif pair[4] == 5:
+            pair[4] = "15:40 ~ 17:10\n5. "
+        elif pair[4] == 6:
+            pair[4] = "17:20 ~ 18:50\n6. "
+        elif pair[4] == 7:
+            pair[4] = "19:00 ~ 20:30\n7. "
+        msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
+               code(str(pair[7]) + ("" + str(pair[8])) if pair[8] == "" else " в ауд. ") + "\n\n"
+    return msg
+
+
 def get_pairs(message: types.Message):
     # Определим чётность недели и номера нужных дней недели
     cmd = message.text.lower().replace(",", "").split(" ")
@@ -120,33 +150,7 @@ def get_today(group: str):
     msg = ""
     if today != 6:  # Если сегодня не воскресенье
         pairs = psdb.r_get_pairs_by_group(day_of_week=today+1, even_week=even_week, group=group)
-        if len(pairs) != 0:
-            msg += bold("Вот твоё расписание на сегодня:") + "\n"
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
-                       code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
-        else:
-            msg += bold("Сегодня работать на заводе не планируется") + "\n"
+        msg += print_pairs(pairs, today+1, even_week)
     return msg
 
 
@@ -160,33 +164,7 @@ def get_today_by_id(id: int):
             return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
                    "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
         pairs = psdb.r_get_pairs_by_tgid(day_of_week=today+1, even_week=even_week, tg_id=id)
-        if len(pairs) != 0:
-            msg += bold("Вот твоё расписание на сегодня:") + "\n"
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
-                       code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
-        else:
-            msg += bold("Сегодня работать на заводе не планируется") + "\n\n"
+        msg += print_pairs(pairs, today+1, even_week)
     return msg
 
 
@@ -204,32 +182,7 @@ def get_next_day(group: str):
     if tomorrow != 6:  # Если завтра не воскресенье
         msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
         pairs = psdb.r_get_pairs_by_group(day_of_week=tomorrow + 1, even_week=even_week, group=group)
-        if len(pairs) != 0:
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
-                    str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
-        else:
-            msg += bold("Завтра на заводе работать не планируется" if not monday else "В понедельник на заводе работать не планируется")
+        msg += print_pairs(pairs, tomorrow+1, even_week)
     return msg
 
 
@@ -257,32 +210,7 @@ def get_next_day_by_id(id: int):
                    "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
         msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
         pairs = psdb.r_get_pairs_by_tgid(day_of_week=tomorrow + 1, even_week=even_week, tg_id=id)
-        if len(pairs) != 0:
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
-                    str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
-        else:
-            msg += bold("Завтра на заводе работать не планируется" if not monday else "В понедельник на заводе работать не планируется")
+        msg += print_pairs(pairs, tomorrow+1, even_week)
     return msg
 
 
@@ -291,33 +219,8 @@ def get_week(group, even_week):
     for i in range(1, 7):
         msg += bold(days_of_week[i]) + "\n"
         pairs = psdb.r_get_pairs_by_group(day_of_week=i, even_week=even_week, group=group)
-        if len(pairs) != 0:
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + code(
-                    str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
-        else:
-            msg += "Нет пар"
-        msg += "\n\n"
+        msg += print_pairs(pairs, i, even_week)
+        msg += "\n"
     return msg
 
 
@@ -547,30 +450,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
 
         pairs = psdb.r_get_pairs_by_group(day_of_week=day_of_week, even_week=even_week, group=group)
         if len(pairs) != 0:
-            msg += bold("Вот твоё расписание на выбранный день (" + days_of_week[day_of_week] + "):") + "\n"
-            for pair in pairs:
-                pair = list(pair)
-                if pair[6] == "":
-                    pair[6] = "Преподаватель не определён"
-
-                if pair[4] == 1:
-                    pair[4] = "8:30 ~ 10:00\n1. "
-                elif pair[4] == 2:
-                    pair[4] = "10:10 ~ 11:40\n2. "
-                elif pair[4] == 3:
-                    pair[4] = "11:50 ~ 13:20\n3. "
-                elif pair[4] == 4:
-                    pair[4] = "14:00 ~ 15:30\n4. "
-                elif pair[4] == 5:
-                    pair[4] = "15:40 ~ 17:10\n5. "
-                elif pair[4] == 6:
-                    pair[4] = "17:20 ~ 18:50\n6. "
-                elif pair[4] == 7:
-                    pair[4] = "19:00 ~ 20:30\n7. "
-                # msg += str(pair[4]) + ". " + str(pair[5]) + " (преподаёт " + str(pair[6]) + ") (" + \
-                #        str(pair[7]) + " в аудитории " + str(pair[8]) + ")\n"
-                msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
-                       code(str(pair[7]) + ("" if pair[8] == "" else " в ауд. ") + str(pair[8])) + "\n\n"
+           msg += print_pairs(pairs, day_of_week, even_week)
         else:
             msg += bold("В выбранный день (" + days_of_week[day_of_week] + ") на заводе работать не планируется") + "\n"
 
