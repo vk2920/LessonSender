@@ -9,15 +9,32 @@ from aiogram.dispatcher import FSMContext
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from pairs import PSDB
+from keyboards import *
+from functions import *
 
 import os
 
 
 class DataInput(StatesGroup):
-    group = State()
-    day_of_week = State()
-    admin = State()
+    group = State()  # Состояние для проверки или изменения группы
+    day_of_week = State()  # Состояние для получения расписания на конкретный учебный день
+
+    admin_main = State()
+
+    admin_add_pair_enter_group = State()
+    admin_add_pair_enter_day = State()
+    admin_add_pair_enter_ordinal = State()
+    admin_add_pair_delete_exists_question = State()
+    admin_add_pair_enter_type = State()
+    admin_add_pair_enter_location = State()
+    admin_add_pair_enter_lesson = State()
+    admin_add_pair_enter_teacher = State()
+    admin_add_pair_confirm = State()
+
+    admin_remove_pair_enter_group = State()
+    admin_remove_pair_enter_day = State()
+    admin_remove_pair_enter_pair_id = State()
+    admin_remove_pair_confirm = State()
 
 
 database = None
@@ -25,7 +42,9 @@ database = None
 API_TOKEN = os.environ['BOT_TOKEN']
 
 ban_list = []
-admin_list = [470985286]
+admin_list = [470985286, 1943247578]
+admin_list_active = []
+admin = {}
 days_of_week_list = ["ВС", "ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"]
 days_of_week = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
 bot_version = "20210921-1800"
@@ -38,216 +57,35 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-bot_keyboard = ReplyKeyboardMarkup()
-bot_keyboard.row(KeyboardButton("Конкретный_день"), KeyboardButton("Пары"))
-bot_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
-bot_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
-bot_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Помощь"))
-
-admin_keyboard = ReplyKeyboardMarkup()
-admin_keyboard.row(KeyboardButton("Конкретный_день"), KeyboardButton("Пары"))
-admin_keyboard.row(KeyboardButton("Сегодня"), (KeyboardButton("Завтра")))
-admin_keyboard.row(KeyboardButton("Чёт"), KeyboardButton("Всё"), (KeyboardButton("Нечёт")))
-admin_keyboard.row(KeyboardButton("Группа"), KeyboardButton("Админ"), KeyboardButton("Помощь"))
-
-group_update_keyboard = ReplyKeyboardMarkup()
-group_update_keyboard.row(KeyboardButton("Посмотреть"), KeyboardButton("Очистить"))
-group_update_keyboard.add(KeyboardButton("Отмена"))
-
-day_of_week_keyboard = ReplyKeyboardMarkup()
-day_of_week_keyboard.row(KeyboardButton("ПН Чёт"), KeyboardButton("ВТ Чёт"), KeyboardButton("СР Чёт"))
-day_of_week_keyboard.row(KeyboardButton("ЧТ Чёт"), KeyboardButton("ПТ Чёт"), KeyboardButton("СБ Чёт"))
-day_of_week_keyboard.row(KeyboardButton("ПН Нечёт"), KeyboardButton("ВТ Нечёт"), KeyboardButton("СР Нечёт"))
-day_of_week_keyboard.row(KeyboardButton("ЧТ Нечёт"), KeyboardButton("ПТ Нечёт"), KeyboardButton("СБ Нечёт"))
-
-psdb = PSDB()
-
-
-def is_group(group: str):
-    group = group.split("/")
-    if len(group) != 2:
-        return False
-
-    direction = group[0]
-    for i in direction:
-        if i not in "абвгдежзийклмнопрстуфхцчшщыэюя":
-            return False
-
-    code_list = group[1].split("-")
-    if code_list[0] not in "бм":
-        return False
-
-    try:
-        int(code_list[1])
-    except Exception as _ex:
-        return False
-
-    try:
-        int(code_list[2])
-    except:
-        return False
-
-    if code_list[3] not in "оз":
-        return False
-
-    return True
-
-
-def print_pairs(pairs: list, day_of_week: int, even_week: bool):
-    if len(pairs) == 0:
-        return bold(days_of_week[day_of_week] +
-               (" чётной недели" if even_week else " нечётной недели") + ". На заводе не работаем") + "\n"
-    msg = bold("Вот твоё расписание на выбранный день (" + days_of_week[day_of_week] +
-               (" чётной недели" if even_week else " нечётной недели") + "):") + "\n"
-    for pair in pairs:
-        pair = list(pair)
-        if pair[6] == "":
-            pair[6] = "Преподаватель не определён"
-
-        if pair[4] == 1:
-            pair[4] = "8:30 ~ 10:00\n1. "
-        elif pair[4] == 2:
-            pair[4] = "10:10 ~ 11:40\n2. "
-        elif pair[4] == 3:
-            pair[4] = "11:50 ~ 13:20\n3. "
-        elif pair[4] == 4:
-            pair[4] = "14:00 ~ 15:30\n4. "
-        elif pair[4] == 5:
-            pair[4] = "15:40 ~ 17:10\n5. "
-        elif pair[4] == 6:
-            pair[4] = "17:20 ~ 18:50\n6. "
-        elif pair[4] == 7:
-            pair[4] = "19:00 ~ 20:30\n7. "
-        msg += str(pair[4]) + str(pair[5]) + "\n    " + italic(str(pair[6])) + "\n    " + \
-               code(str(pair[7]) + ("" + str(pair[8])) if pair[8] == "" else " в ауд. ") + "\n\n"
-    return msg
-
-
-def get_pairs(message: types.Message):
-    # Определим чётность недели и номера нужных дней недели
-    cmd = message.text.lower().replace(",", "").split(" ")
-
-    msg = ""
-
-    # Добавим к ответу бота расписание на сегодня
-    if len(cmd) == 2 and is_group(cmd[1]):
-        msg += get_today(group=cmd[1])
-    else:
-        msg += get_today_by_id(message.from_user.id)
-
-    # Добавим в сообщение расписание на завтра
-    if len(cmd) == 2 and cmd[1] != "" and is_group(cmd[1]):
-        msg += get_next_day(group=cmd[1])
-    else:
-        msg += get_next_day_by_id(message.from_user.id)
-
-    return msg
-
-
-def get_today(group: str):
-    even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
-    today = datetime.datetime.today().weekday()
-    msg = ""
-    if today != 6:  # Если сегодня не воскресенье
-        pairs = psdb.r_get_pairs_by_group(day_of_week=today+1, even_week=even_week, group=group)
-        msg += print_pairs(pairs, today+1, even_week)
-    return msg
-
-
-def get_today_by_id(id: int):
-    even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
-    today = datetime.datetime.today().weekday()
-    msg = ""
-    if today != 6:  # Если сегодня не воскресенье
-        group = psdb.r_user_group_is_set(tg_id=id)
-        if not group:
-            return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
-                   "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
-        pairs = psdb.r_get_pairs_by_tgid(day_of_week=today+1, even_week=even_week, tg_id=id)
-        msg += print_pairs(pairs, today+1, even_week)
-    return msg
-
-
-def get_next_day(group: str):
-    even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
-    tomorrow = datetime.datetime.today().weekday() + 1
-    msg = ""
-    monday = False
-
-    if tomorrow == 6:  # Если завтра воскресенье, то перейдём на понедельник
-        monday = True
-        tomorrow = 0
-        even_week = not even_week
-
-    if tomorrow != 6:  # Если завтра не воскресенье
-        msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
-        pairs = psdb.r_get_pairs_by_group(day_of_week=tomorrow + 1, even_week=even_week, group=group)
-        msg += print_pairs(pairs, tomorrow+1, even_week)
-    return msg
-
-
-def get_next_day_by_id(id: int):
-    even_week = int(datetime.date.today().strftime("%V")) % 2 == 0
-    today = datetime.datetime.today().weekday()
-    if today == 6:
-        tomorrow = 0
-        even_week = not even_week
-    else:
-        tomorrow = today + 1
-
-    msg = ""
-    monday = False
-
-    if tomorrow == 6:  # Если завтра воскресенье, то перейдём на понедельник
-        monday = True
-        tomorrow = 0
-        even_week = not even_week
-
-    if tomorrow != 6:  # Если завтра не воскресенье
-        group = psdb.r_user_group_is_set(tg_id=id)
-        if not group:
-            return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
-                   "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
-        msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
-        pairs = psdb.r_get_pairs_by_tgid(day_of_week=tomorrow + 1, even_week=even_week, tg_id=id)
-        msg += print_pairs(pairs, tomorrow+1, even_week)
-    return msg
-
-
-def get_week(group, even_week):
-    msg = ""
-    for i in range(1, 7):
-        msg += bold(days_of_week[i]) + "\n"
-        pairs = psdb.r_get_pairs_by_group(day_of_week=i, even_week=even_week, group=group)
-        msg += print_pairs(pairs, i, even_week)
-        msg += "\n"
-    return msg
-
-
-def get_help():
-    return "Итак, в этом боте ты можешь узнать расписание на сегодня, " \
-           "на завтра, на неделю, на 2 недели (полное расписание)\n" \
-           "Тут есть следующие команды (их перечень будет расширяться):\n" \
-           "    " + bold("1. пары [<название группы>]") + " — получить инфу о парах на сегодня или на завтра в" \
-                    " зависимости от текущего времени (не злоупотребляй)\n" \
-           "    " + bold("2. сегодня [<название группы>]") + " — получить инфу о парах на сегодня (и пофиг, если ты" \
-                    " это делаешь вечером)\n" \
-           "    " + bold("3. завтра [<название группы>]") + " — получить инфу о парах на следующий учебный день" \
-                    " (отличный варик для запроса вечером)\n" \
-           "    " + bold("4. чёт") + " — получить инфу о парах на чётную неделю (только если задана группа)\n" \
-           "    " + bold("5. нечёт") + " — получить инфу о парах на нечётную неделю (только если задана группа)\n" \
-           "    " + bold("6. всё") + " — получить инфу о парах на обе недели (только если задана группа)\n" \
-           "    " + bold("7. группа [<название группы>]") + " или " + bold("группа нет") + " — так можно задать," \
-                    " проверить или удалить свою группу, чтобы не указывать её при запросе\n" \
-           "    " + bold("8. помощь") + " — ты только что это и сделал, о возможностях этой команды уже знаешь)\n"
-
 
 @dp.message_handler()
-async def echo(message: types.Message):
+async def standard_msg(message: types.Message):
+    """
+    Основной хэндлер для всех принимаемых сообщений, кроме сообщений при активных состояниях
+    :param message:
+    :return: Код ошибки или 0, если ошибок нет
+    """
     # Кинем сообщения в логи
     print("[" + str(datetime.datetime.now(pytz.timezone('Europe/Moscow')).strftime("%Y-%m-%d %H.%M.%S")) + "] " +
           str(message.from_user.first_name) + " (" + str(message.from_user.id) + " / " +
           str(message.from_user.username) + ") написал: " + str(message.text))
+
+    if message.text.lower() in ["admin", "фвьшт", "админ", "flvby"] and message.from_user.id in admin_list:
+        if len(admin_list_active) != 0:
+            await message.answer("Панель администрирования заблокирована, попробуй позже")
+            return 0
+        else:
+            admin_list_active.append(message.from_user.id)
+            print("Администратор зашёл в панель управления.")
+            print("Список активных администраторов:")
+            for admin in admin_list_active:
+                print("    — " + str(admin))
+
+            await DataInput.admin_main.set()
+            await message.answer("Панель администрирования, выбери действие", reply_markup=admin_panel)
+            return 0
+
+    keyboard = admin_keyboard if message.from_user.id in admin_list else bot_keyboard
 
     if message.from_user.id in ban_list:  # Отсеяли забаненых
         await message.answer("Доступ временно закрыт (403)")
@@ -339,11 +177,6 @@ async def echo(message: types.Message):
                 await DataInput.day_of_week.set()
                 return 0
 
-            elif cmd[0] in ["admin", "админ"] and message.from_user.id in admin_list:
-                await message.answer("Панель администрирования\nВыбери действие", reply_markup=admin_keyboard)
-                await DataInput.admin.set()
-                return 0
-
             elif cmd[0] in ["помощь", "help", "хелп", "хэлп", "рудз", "gjvjom"]:
                 msg += get_help()
 
@@ -364,32 +197,148 @@ async def echo(message: types.Message):
 
         # Ассинхронный ответ на сообщение пользователя
         try:
-            await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN, reply_markup=bot_keyboard)
+            await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN, reply_markup=keyboard)
         except:
             msg = "На стороне сервера сработало исключение (Error 500)\n" \
                   "Методом \"научного тыка\" было определено, что это чаще всего связано с форматированием текста " \
                   "(которого нет)\n\n" + msg
-            await message.answer(msg, reply_markup=bot_keyboard)
+            await message.answer(msg, reply_markup=keyboard)
 
 
-@dp.message_handler(state=DataInput.admin)
+@dp.message_handler(state=DataInput.admin_main)  # Админка, главное меню
 async def admin_msg(message: types.Message, state: FSMContext):
-    await message.answer("Интерфейс администрирования пока недоступен, так как не реализован.\n"
-                         "Давай пока будем просто узнавать расписание для своей группы", reply_markup=bot_keyboard)
-    await state.finish()
+    cmd = message.text.lower()
+    if cmd in ["выход", "учше", "ds[jl", "exit"]:
+        await message.answer("Окей, выходим из админки)", reply_markup=bot_keyboard)
+        await state.finish()
+        del admin_list_active[0]
+        return 0
+
+    elif cmd in ["add pair", "lj,fdbnm gfhe", "фвв зфшк", "добавить пару"]:
+        await DataInput.admin_add_pair_enter_group.set()
+        await message.answer("Выбери группу, для которой нужно добавить пару", reply_markup=select_group_keyboard)
+        await state.finish()
+        return 0
+
+    elif cmd in ["remove pair", "elfkbnm gfhe", "куьщму зфшк", "удалить пару"]:
+        await DataInput.admin_remove_pair_enter_group.set()
+        await message.answer("Выбери группу, для которой нужно удалить пару", reply_markup=select_group_keyboard)
+        await state.finish()
+        return 0
+
+
+@dp.message_handler(state=DataInput.admin_remove_pair_enter_group)  # Выбор группы при удалении пары
+async def admin_remove_pair_enter_group_msg(message: types.Message, state: FSMContext):
+    group = message.text.lower()
+    if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
+        await message.answer("Ковальски, отмена!")
+        await state.finish()
+        await DataInput.admin_main.set()
+        return 0
+
+    if is_group(group):
+        with state.proxy() as data:
+            data['selected_group'] = group
+
+        await message.answer("Окей, группа получена, теперь выбери учебный день", reply_markup=day_of_week_keyboard)
+        await DataInput.next()
+        return 0
+    else:
+        await message.answer("И чё это за дичь?\nКто тебя учил писать название группы?")
+
+
+@dp.message_handler(state=DataInput.admin_remove_pair_enter_day)  # Выбор дня при удалении пары
+async def admin_remove_pair_enter_day_msg(message: types.Message, state: FSMContext):
+    if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
+        await message.answer("Ковальски, отмена!")
+        await state.finish()
+        await DataInput.admin_main.set()
+        return 0
+
+    day = message.text.lower().split(" ")
+    dof = days_of_week_list.index(day[0])
+    if day[1] in ["чёт", "x`n", "чет", "xtn"]:
+        even_week = True
+    elif day[1] in ["нечёт", "ytx`n", "нечет", "ytxtn"]:
+        even_week = False
+    else:
+        await message.answer("Где-то ошибка, воспользуйся клавиатурой", reply_markup=day_of_week_keyboard)
+        return 0
+
+    with state.proxy() as data:
+        group = data['selected_group']
+
+    group_str = str(group).split("/")
+    group_str = group_str[0].upper() + "/" + group_str[1]
+
+    msg = bold("Вот список пар у выбранной группы (" + group_str + ") в выбранный день (" + days_of_week[dof] + " " +
+               ("чётной недели" if even_week else "нечётной недели") + "):") + "\n\n"
+    select_pair_id_keyboard = ReplyKeyboardMarkup()
+
+    pairs = psdb.r_get_pairs_by_group(day_of_week=dof, even_week=even_week, group=group)
+    for pair in pairs:
+        select_pair_id_keyboard.add(KeyboardButton(str(pair[0])))
+
+    msg += print_pairs(pairs=pairs, day_of_week=dof, even_week=even_week, with_id=True)
+
+    await message.answer(msg.replace("\\", ""), reply_markup=select_pair_id_keyboard,
+                         parse_mode=types.ParseMode.MARKDOWN)
+    await DataInput.next()
+
+
+@dp.message_handler(state=DataInput.admin_remove_pair_enter_pair_id)  # Выбор пары для удаления
+async def admin_remove_pair_enter_pair_id_msg(message: types.Message, state: FSMContext):
+    if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
+        await message.answer("Ковальски, отмена!")
+        await state.finish()
+        await DataInput.admin_main.set()
+        return 0
+
+    try:
+        id = int(message.text.lower())
+        with state.proxy() as data:
+            data['pair_id'] = id
+
+        await DataInput.next()
+        await message.answer("Выбрана пара для удаления\nТы уверен, что хочешь её удалить из таблицы?",
+                             reply_markup=confirm_keyboard)
+    except:
+        await message.answer("У тебя появилась клавиатура, просто выбери ID пары для удаления")
+
+
+@dp.message_handler(state=DataInput.admin_remove_pair_confirm)  # Подтверждение удаления
+async def admin_remove_pair_confirm_msg(message: types.Message, state: FSMContext):
+    if message.text.lower() in ["ds[jl", "exit", "выход", "учше", "jnvtyf", "cancel", "отмена", "сфтсуд"]:
+        await message.answer("Ковальски, отмена!")
+        await state.finish()
+        await DataInput.admin_main.set()
+        return 0
+    elif message.text.lower() in ["yes", "lf", "да", "нуы"]:
+        with state.proxy() as data:
+            id = data['pair_id']
+        psdb.w_remove_pair_by_pair_id(pair_id=int(id))
+        await message.answer("Выбранная пара удалена")
+        await state.finish()
+        await DataInput.admin_main.set()
+        return 0
+    else:
+        await message.answer("Используй клавиатуру, я не понимаю других команд")
+        return 0
 
 
 @dp.message_handler(state=DataInput.group)
 async def group_msg(message: types.Message, state: FSMContext):
     group = message.text.lower()
+    keyboard = admin_keyboard if message.from_user.id in admin_list else bot_keyboard
+
     if is_group(group=group):
         psdb.w_register_user_by_tgid(message.from_user.id, message.from_user.first_name, group)
-        await message.answer("Твоя группа задана".replace('\\', ''), reply_markup=bot_keyboard,
+        await message.answer("Твоя группа задана".replace('\\', ''), reply_markup=keyboard,
                              parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     elif group in ["нет", "ytn", "очистить", "jxbcnbnm"]:
         psdb.w_remove_user_group(message.from_user.id)
-        await message.answer("Твоя группа удалена из БД".replace('\\', ''), reply_markup=bot_keyboard,
+        await message.answer("Твоя группа удалена из БД".replace('\\', ''), reply_markup=keyboard,
                              parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     elif group in ["посмотреть", "gjcvjnhtnm"]:
@@ -398,12 +347,12 @@ async def group_msg(message: types.Message, state: FSMContext):
             group = group.split("/")
             group = group[0].upper() + "/" + group[1]
             await message.answer(str("Вот твоя группа: " + bold(str(group))).replace('\\', ''),
-                                 reply_markup=bot_keyboard, parse_mode=types.ParseMode.MARKDOWN)
+                                 reply_markup=keyboard, parse_mode=types.ParseMode.MARKDOWN)
         else:
-            await message.answer("У тебя не задана группа", reply_markup=bot_keyboard)
+            await message.answer("У тебя не задана группа", reply_markup=keyboard)
         await state.finish()
     elif group in ["отмена", "jnvtyf"]:
-        await message.answer("Смена группы отменена".replace('\\', ''), reply_markup=bot_keyboard,
+        await message.answer("Смена группы отменена".replace('\\', ''), reply_markup=keyboard,
                              parse_mode=types.ParseMode.MARKDOWN)
         await state.finish()
     else:
@@ -444,7 +393,7 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
         group = psdb.r_user_group_is_set(message.from_user.id)
         if not group:
             await message.answer("У тебя не установлена группа, исправить это можно кнопкой \"Группа\"",
-                                 reply_markup=bot_keyboard)
+                                 reply_markup=(admin_keyboard if message.from_user.id in admin_list else bot_keyboard))
             await state.finish()
             return 0
 
@@ -457,15 +406,16 @@ async def day_of_week_msg(message: types.Message, state: FSMContext):
         # Ассинхронный ответ на сообщение пользователя
         try:
             await message.answer(msg.replace('\\', ''), parse_mode=types.ParseMode.MARKDOWN,
-                                 reply_markup=bot_keyboard)
+                                 reply_markup=(admin_keyboard if message.from_user.id in admin_list else bot_keyboard))
             await state.finish()
         except:
             msg = "На стороне сервера сработало исключение (Error 500)\n" \
                   "Методом \"научного тыка\" было определено, что это чаще всего связано с форматированием текста " \
                   "(которого нет)\n\n" + msg
-            await message.answer(msg, reply_markup=bot_keyboard)
+            await message.answer(msg, reply_markup=(admin_keyboard if message.from_user.id in admin_list else bot_keyboard))
             await state.finish()
 
 
 if __name__ == '__main__':
+    print(DataInput.admin_main)
     executor.start_polling(dp, skip_updates=True)

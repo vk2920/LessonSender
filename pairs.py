@@ -18,13 +18,10 @@ class PSDB():
     """
     def __init__(self):
         try:
-            try:
-                DB_HOST = os.environ["DB_HOST"]
-                DB_USER = os.environ["DB_USER"]
-                DB_PASSWD = os.environ["DB_PASSWD"]
-                DB_NAME = os.environ["DB_NAME"]
-            except:
-                print("Ошибка: Нет переменных окружения для доступа к БД")
+            DB_HOST = os.environ["DB_HOST"]
+            DB_USER = os.environ["DB_USER"]
+            DB_PASSWD = os.environ["DB_PASSWD"]
+            DB_NAME = os.environ["DB_NAME"]
 
             self._connection = psycopg2.connect(
                 host=DB_HOST,
@@ -117,6 +114,13 @@ class PSDB():
                 return group
             except:
                 return False
+
+    def w_remove_pair_by_pair_id(self, pair_id: int):
+        cursor = self._connection.cursor()
+        sql = f"DELETE FROM public.pairs WHERE id = {pair_id}"
+        cursor.execute(sql)
+        self._connection.commit()
+        return True
 
     def w_register_user_by_tgid(self, tg_id: int, name: str, group: str):
         """
