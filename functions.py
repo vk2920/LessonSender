@@ -1,5 +1,4 @@
 from pairs_functions import *
-from administration import Admin
 
 admin_locked = False
 
