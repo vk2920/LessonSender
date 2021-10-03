@@ -207,37 +207,42 @@ async def standard_msg(message: types.Message):
 
 @dp.message_handler(state=DataInput.admin_main)  # Админка, главное меню
 async def admin_msg(message: types.Message, state: FSMContext):
+    print("Админка вызвана")
     cmd = message.text.lower()
     if cmd in ["выход", "учше", "ds[jl", "exit"]:
         await message.answer("Окей, выходим из админки)", reply_markup=bot_keyboard)
         await state.finish()
         del admin_list_active[0]
+        print("Пользователь вышел из админки")
         return 0
 
     elif cmd in ["add pair", "lj,fdbnm gfhe", "фвв зфшк", "добавить пару"]:
-        await DataInput.admin_add_pair_enter_group.set()
-        await message.answer("Выбери группу, для которой нужно добавить пару", reply_markup=select_group_keyboard)
         await state.finish()
+        await message.answer("Выбери группу, для которой нужно добавить пару", reply_markup=select_group_keyboard)
+        await DataInput.admin_add_pair_enter_group.set()
+        print("Пользователь хочет добавить пару")
         return 0
 
-    elif cmd in ["remove pair", "elfkbnm gfhe", "куьщму зфшк", "удалить пару"]:
-        await DataInput.admin_remove_pair_enter_group.set()
-        await message.answer("Выбери группу, для которой нужно удалить пару", reply_markup=select_group_keyboard)
+    elif cmd in ["remove pair", "elfkbnm gfhe", "куьщму зфшк", "удалить пару", "e,hfnm gfhe", "убрать пару"]:
         await state.finish()
+        await message.answer("Выбери группу, для которой нужно удалить пару", reply_markup=select_group_keyboard)
+        await DataInput.admin_remove_pair_enter_group.set()
+        print("Пользователь хочет удалить пару")
         return 0
 
 
 @dp.message_handler(state=DataInput.admin_remove_pair_enter_group)  # Выбор группы при удалении пары
 async def admin_remove_pair_enter_group_msg(message: types.Message, state: FSMContext):
+    print("Состояние переключено на ввод группы для удаления пары")
     group = message.text.lower()
     if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
-        await message.answer("Ковальски, отмена!")
+        await message.answer("Ковальски, отмена!", reply_markup=admin_keyboard)
         await state.finish()
         await DataInput.admin_main.set()
         return 0
 
     if is_group(group):
-        with state.proxy() as data:
+        async with state.proxy() as data:
             data['selected_group'] = group
 
         await message.answer("Окей, группа получена, теперь выбери учебный день", reply_markup=day_of_week_keyboard)
@@ -249,14 +254,15 @@ async def admin_remove_pair_enter_group_msg(message: types.Message, state: FSMCo
 
 @dp.message_handler(state=DataInput.admin_remove_pair_enter_day)  # Выбор дня при удалении пары
 async def admin_remove_pair_enter_day_msg(message: types.Message, state: FSMContext):
+    print("Состояние переключено на ввод учебного дня для удаления пары")
     if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
-        await message.answer("Ковальски, отмена!")
+        await message.answer("Ковальски, отмена!", reply_markup=admin_keyboard)
         await state.finish()
         await DataInput.admin_main.set()
         return 0
 
     day = message.text.lower().split(" ")
-    dof = days_of_week_list.index(day[0])
+    dof = days_of_week_list.index(day[0].upper())
     if day[1] in ["чёт", "x`n", "чет", "xtn"]:
         even_week = True
     elif day[1] in ["нечёт", "ytx`n", "нечет", "ytxtn"]:
@@ -265,7 +271,7 @@ async def admin_remove_pair_enter_day_msg(message: types.Message, state: FSMCont
         await message.answer("Где-то ошибка, воспользуйся клавиатурой", reply_markup=day_of_week_keyboard)
         return 0
 
-    with state.proxy() as data:
+    async with state.proxy() as data:
         group = data['selected_group']
 
     group_str = str(group).split("/")
@@ -288,15 +294,16 @@ async def admin_remove_pair_enter_day_msg(message: types.Message, state: FSMCont
 
 @dp.message_handler(state=DataInput.admin_remove_pair_enter_pair_id)  # Выбор пары для удаления
 async def admin_remove_pair_enter_pair_id_msg(message: types.Message, state: FSMContext):
+    print("Состояние переключено на выбор пары для удаления")
     if message.text.lower() in ["ds[jl", "exit", "выход", "учше"]:
-        await message.answer("Ковальски, отмена!")
+        await message.answer("Ковальски, отмена!", reply_markup=admin_keyboard)
         await state.finish()
         await DataInput.admin_main.set()
         return 0
 
     try:
         id = int(message.text.lower())
-        with state.proxy() as data:
+        async with state.proxy() as data:
             data['pair_id'] = id
 
         await DataInput.next()
@@ -308,16 +315,18 @@ async def admin_remove_pair_enter_pair_id_msg(message: types.Message, state: FSM
 
 @dp.message_handler(state=DataInput.admin_remove_pair_confirm)  # Подтверждение удаления
 async def admin_remove_pair_confirm_msg(message: types.Message, state: FSMContext):
+    print("Состояние переключено на подтверждение удаления пары")
     if message.text.lower() in ["ds[jl", "exit", "выход", "учше", "jnvtyf", "cancel", "отмена", "сфтсуд"]:
-        await message.answer("Ковальски, отмена!")
+        await message.answer("Ковальски, отмена!", reply_markup=admin_keyboard)
         await state.finish()
         await DataInput.admin_main.set()
         return 0
     elif message.text.lower() in ["yes", "lf", "да", "нуы"]:
-        with state.proxy() as data:
+        async with state.proxy() as data:
             id = data['pair_id']
         psdb.w_remove_pair_by_pair_id(pair_id=int(id))
-        await message.answer("Выбранная пара удалена")
+        print(f"Пара {id} удалена")
+        await message.answer("Выбранная пара удалена", reply_markup=admin_keyboard)
         await state.finish()
         await DataInput.admin_main.set()
         return 0
