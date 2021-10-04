@@ -64,9 +64,9 @@ def print_pairs(pairs: list, day_of_week: int, even_week: bool, with_id=False):
             pair[4] = "17:20 ~ 18:50\n6. "
         elif pair[4] == 7:
             pair[4] = "19:00 ~ 20:30\n7. "
-        msg += str(pair[4]) + str(pair[5]) + ((" ID:" + str(pair[0])) if with_id else "") + "\n    " + \
                italic(str(pair[6])) + "\n    " + code(str(pair[7]) +
-               ("" + str(pair[8])) if pair[8] == "" else " в ауд. ") + "\n\n"
+        msg += str(pair[4]) + str(pair[5]) + (bold(" ID:" + str(pair[0])) if with_id else "") + "\n    " + \
+               italic(str(pair[6])) + "\n    " + code(str(pair[7]) + ("" if pair[8] == "" else (" в ауд. " + pair[8]))) + "\n\n"
     return msg
 
 
