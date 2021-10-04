@@ -64,6 +64,7 @@ def print_pairs(pairs: list, day_of_week: int, even_week: bool, with_id=False):
             pair[4] = "17:20 ~ 18:50\n6. "
         elif pair[4] == 7:
             pair[4] = "19:00 ~ 20:30\n7. "
+
         msg += str(pair[4]) + str(pair[5]) + (bold(" ID:" + str(pair[0])) if with_id else "") + "\n    " + \
                italic(str(pair[6])) + "\n    " + code(str(pair[7]) + ("" if pair[8] == "" else (" в ауд. " + pair[8]))) + "\n\n"
     return msg
@@ -126,7 +127,6 @@ def get_next_day(group: str):
         even_week = not even_week
 
     if tomorrow != 6:  # Если завтра не воскресенье
-        msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
         pairs = psdb.r_get_pairs_by_group(day_of_week=tomorrow + 1, even_week=even_week, group=group)
         msg += print_pairs(pairs, tomorrow+1, even_week)
     return msg
@@ -154,7 +154,6 @@ def get_next_day_by_id(id: int):
         if not group:
             return "У тебя не задана группа\nИсправить это можно командой 'группа <название группы>'\n" \
                    "Проверяется текущая группа командой 'группа' без аргументов (параметров)"
-        msg += bold("Вот твоё расписание на завтра:" if not monday else "Вот твоё расписание на понедельник:") + "\n"
         pairs = psdb.r_get_pairs_by_tgid(day_of_week=tomorrow + 1, even_week=even_week, tg_id=id)
         msg += print_pairs(pairs, tomorrow+1, even_week)
     return msg
